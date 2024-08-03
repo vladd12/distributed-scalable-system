@@ -1,12 +1,25 @@
-#include <spdlog/sinks/stdout_color_sinks.h>
-#include <spdlog/spdlog.h>
+#include <core/cmd_line_args.hpp>
+#include <iostream>
 
 int main(int argc, char *argv[])
 {
-    // create a color multi-threaded logger
-    auto console = spdlog::stdout_color_mt("console");
-    auto err_logger = spdlog::stderr_color_mt("stderr");
-    console->info("loggers can be retrieved from a global registry using the spdlog::get(logger_name)");
-    err_logger->critical("some error");
+    try
+    {
+        core::cmd_line_args arguments { argc, argv };
+        if (arguments.is_help_need())
+        {
+            arguments.print_help(std::cout);
+            return 2;
+        }
+    } catch (std::exception &e)
+    {
+        std::cout << e.what() << '\n';
+        return 1;
+    } catch (...)
+    {
+        std::cout << "unrecognized error\n";
+        return 1;
+    }
+
     return 0;
 }

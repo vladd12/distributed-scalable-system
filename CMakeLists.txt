@@ -13,10 +13,12 @@ set(FETCHCONTENT_UPDATES_DISCONNECTED ON)
 # Adding path for cmake scripts
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 #include(get_gtest) # Getting googletest library
-#include(get_conan) # Getting CMake conan
-#include(get_boost) # Getting boost library
+include(get_conan) # Getting CMake conan
+include(get_boost) # Getting boost library
 include(get_spdlog) # Getting spdlog library
 include(get_nlohmann_json) # Getting nlohmann_json library
+
+find_package(Boost COMPONENTS boost program_options REQUIRED) # Finding boost
 
 # Setup variables for directories
 set(DCS_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
@@ -24,10 +26,12 @@ set(DCS_SOURCES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(DCS_TESTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tests")
 
 set(DCS_DAEMON_HEADERS
-    "${DCS_SOURCES_DIR}/config/config.hpp"
-    "${DCS_SOURCES_DIR}/utils/logger.hpp"
+  "${DCS_SOURCES_DIR}/core/cmd_line_args.hpp"
+  "${DCS_SOURCES_DIR}/config/config.hpp"
+  "${DCS_SOURCES_DIR}/utils/logger.hpp"
 )
 set(DCS_DAEMON_SOURCES
+  "${DCS_SOURCES_DIR}/core/cmd_line_args.cpp"
   "${DCS_SOURCES_DIR}/config/config.cpp"
   "${DCS_SOURCES_DIR}/utils/logger.cpp"
   "${DCS_SOURCES_DIR}/utils/utils.cpp"
@@ -37,4 +41,6 @@ set(DCS_DAEMON_SOURCES
 # Creating executable target
 add_executable(dcs-daemon ${DCS_DAEMON_HEADERS} ${DCS_DAEMON_SOURCES})
 
-target_link_libraries(dcs-daemon PRIVATE spdlog::spdlog nlohmann_json::nlohmann_json)
+target_include_directories(dcs-daemon PRIVATE "${DCS_SOURCES_DIR}")
+
+target_link_libraries(dcs-daemon PRIVATE Boost::program_options Boost::boost spdlog::spdlog nlohmann_json::nlohmann_json)

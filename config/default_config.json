@@ -1,0 +1,50 @@
+{
+    "logger": {
+        
+    },
+    "fs": {
+        "name": "local"
+    },
+    "file": {
+        "limit": 65536,
+        "ignored": true
+    },
+    "dfs": {
+        "node-port": 50010,
+        "name-dir": "/tmp/dcs/dfs/name",
+        "data-dir": "/tmp/dcs/dfs/data",
+        "replication": 3
+    },
+    "io": {
+        "sort": {
+            "factor": 10,
+            "buffer": 100,
+        },
+        "file-buffer-size": 4096,
+        "bytes-per-checksum": 512,
+        "skip-checksum-errors": false,
+        "map-index-skip": 0
+    },
+    "ipc": {
+        "timeout": 60000
+    },
+    "map-reduce": {
+        "task-tracker": {
+            "location": "local",
+            "info-port": 50030,
+            "output-port": 50040,
+            "report-port": 50050,
+            "tasks-limit": 2,
+            "child-heap-size": 200
+        },
+        "directories": {
+            "local": "/tmp/dcs/mapred/local",
+            "system": "/tmp/dcs/mapred/system",
+            "temp": "/tmp/dcs/mapred/temp"
+        },
+        "map-tasks": 2,
+        "reduce-tasks": 1,
+        "task-timeout": 60000,
+        "combine-buffer-size": 100000
+    }
+}

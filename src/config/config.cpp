@@ -1,10 +1,6 @@
-#include "config.hpp"
+#include "config/config.hpp"
 
 namespace config
 {
-
-config::config()
-{
-}
 
 } // namespace config

@@ -1,14 +1,16 @@
 #pragma once
 
 #include <nlohmann/json.hpp>
+#include <string>
+#include <string_view>
 
 namespace config
 {
 
-class config
+class configuration
 {
 public:
-    explicit config();
+    explicit configuration();
 };
 
 } // namespace config
