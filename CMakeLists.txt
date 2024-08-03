@@ -27,12 +27,12 @@ set(DCS_TESTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tests")
 
 set(DCS_DAEMON_HEADERS
   "${DCS_SOURCES_DIR}/core/cmd_line_args.hpp"
-  "${DCS_SOURCES_DIR}/config/config.hpp"
+  "${DCS_SOURCES_DIR}/config/configuration.hpp"
   "${DCS_SOURCES_DIR}/utils/logger.hpp"
 )
 set(DCS_DAEMON_SOURCES
   "${DCS_SOURCES_DIR}/core/cmd_line_args.cpp"
-  "${DCS_SOURCES_DIR}/config/config.cpp"
+  "${DCS_SOURCES_DIR}/config/configuration.cpp"
   "${DCS_SOURCES_DIR}/utils/logger.cpp"
   "${DCS_SOURCES_DIR}/utils/utils.cpp"
   "${DCS_SOURCES_DIR}/main.cpp"
@@ -44,3 +44,11 @@ add_executable(dcs-daemon ${DCS_DAEMON_HEADERS} ${DCS_DAEMON_SOURCES})
 target_include_directories(dcs-daemon PRIVATE "${DCS_SOURCES_DIR}")
 
 target_link_libraries(dcs-daemon PRIVATE Boost::program_options Boost::boost spdlog::spdlog nlohmann_json::nlohmann_json)
+
+# Copy default config after build
+add_custom_command(
+  TARGET dcs-daemon POST_BUILD COMMAND
+  ${CMAKE_COMMAND} -E copy
+  ${CMAKE_CURRENT_SOURCE_DIR}/config/default_config.json
+  ${CMAKE_CURRENT_BINARY_DIR}/default_config.json
+)

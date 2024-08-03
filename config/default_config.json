@@ -18,7 +18,7 @@
     "io": {
         "sort": {
             "factor": 10,
-            "buffer": 100,
+            "buffer": 100
         },
         "file-buffer-size": 4096,
         "bytes-per-checksum": 512,
@@ -29,13 +29,16 @@
         "timeout": 60000
     },
     "map-reduce": {
-        "task-tracker": {
+        "job-tracker": {
             "location": "local",
-            "info-port": 50030,
+            "info-port": 50030
+        },
+        "task-tracker": {
             "output-port": 50040,
             "report-port": 50050,
             "tasks-limit": 2,
-            "child-heap-size": 200
+            "child-heap-size": 200,
+            "task-timeout": 60000
         },
         "directories": {
             "local": "/tmp/dcs/mapred/local",
@@ -44,7 +47,6 @@
         },
         "map-tasks": 2,
         "reduce-tasks": 1,
-        "task-timeout": 60000,
         "combine-buffer-size": 100000
     }
 }

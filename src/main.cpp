@@ -1,5 +1,11 @@
+#include <config/configuration.hpp>
 #include <core/cmd_line_args.hpp>
 #include <iostream>
+
+void test(config::configuration_ptr &cfg)
+{
+    std::cout << cfg->dfs.name_dir << ' ' << cfg->dfs.data_dir << '\n';
+}
 
 int main(int argc, char *argv[])
 {
@@ -11,9 +17,11 @@ int main(int argc, char *argv[])
             arguments.print_help(std::cout);
             return 2;
         }
+        auto cfg { config::parse_configuration(arguments.get_config_filepath()) };
+        test(cfg);
     } catch (std::exception &e)
     {
-        std::cout << e.what() << '\n';
+        std::cout << "Runtime error: " << e.what() << '\n';
         return 1;
     } catch (...)
     {
