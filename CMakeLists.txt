@@ -15,6 +15,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 #include(get_gtest) # Getting googletest library
 include(get_conan) # Getting CMake conan
 include(get_boost) # Getting boost library
+include(get_fmt) # Getting fmt library
 include(get_spdlog) # Getting spdlog library
 include(get_nlohmann_json) # Getting nlohmann_json library
 
@@ -28,6 +29,7 @@ set(DCS_TESTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tests")
 set(DCS_DAEMON_HEADERS
   "${DCS_SOURCES_DIR}/core/cmd_line_args.hpp"
   "${DCS_SOURCES_DIR}/config/configuration.hpp"
+  "${DCS_SOURCES_DIR}/fs/file_system.hpp"
   "${DCS_SOURCES_DIR}/utils/logger.hpp"
 )
 set(DCS_DAEMON_SOURCES
@@ -43,7 +45,13 @@ add_executable(dcs-daemon ${DCS_DAEMON_HEADERS} ${DCS_DAEMON_SOURCES})
 
 target_include_directories(dcs-daemon PRIVATE "${DCS_SOURCES_DIR}")
 
-target_link_libraries(dcs-daemon PRIVATE Boost::program_options Boost::boost spdlog::spdlog nlohmann_json::nlohmann_json)
+target_link_libraries(dcs-daemon PRIVATE
+  Boost::program_options
+  Boost::boost
+  fmt::fmt
+  spdlog::spdlog
+  nlohmann_json::nlohmann_json
+)
 
 # Copy default config after build
 add_custom_command(
