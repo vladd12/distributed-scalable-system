@@ -13,17 +13,17 @@ namespace opt = ::boost::program_options;
 struct cmd_line_args final
 {
 private:
-    opt::options_description m_desc;
-    opt::variables_map m_vmap;
-    std::vector<std::string> m_unrecognized;
+  opt::options_description m_desc;
+  opt::variables_map m_vmap;
+  std::vector<std::string> m_unrecognized;
 
 public:
-    explicit cmd_line_args(int argc, char **argv);
+  explicit cmd_line_args(int argc, char **argv);
 
-    bool is_help_need();
-    void print_help(std::ostream &stream);
+  bool is_help_need();
+  void print_help(std::ostream &stream);
 
-    std::string get_config_filepath() noexcept;
+  std::string get_config_filepath() noexcept;
 };
 
 } // namespace core

@@ -8,7 +8,7 @@ namespace utils
 class logger
 {
 public:
-    logger();
+  logger();
 };
 
 } // namespace utils

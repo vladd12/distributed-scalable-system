@@ -16,6 +16,8 @@ BraceWrapping:
   BeforeElse: true
 ConstructorInitializerAllOnOneLineOrOnePerLine: true
 ColumnLimit: 120
+IndentWidth: 2
+AccessModifierOffset: -2
 PointerBindsToType: false
 SpaceBeforeParens: ControlStatements
 IncludeBlocks: Regroup
