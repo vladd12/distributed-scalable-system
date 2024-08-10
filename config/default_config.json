@@ -1,9 +1,20 @@
 {
     "logger": {
-        
+        "name": "default_logger",
+        "filepath": "logs/log.txt",
+        "pattern": "[%H:%M:%S %z] [%n] [%^---%L---%$] [thread %t] %v",
+        "rotate": {
+            "max-size": 10,
+            "max-files" : 10
+        },
+        "async": {
+            "thread-pool-size": 1,
+            "queue-size": 1024
+        }
     },
     "fs": {
-        "name": "local"
+        "host": "localhost",
+        "port": 9000
     },
     "file": {
         "limit": 65536,

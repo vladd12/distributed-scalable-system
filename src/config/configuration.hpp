@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <fstream>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -11,10 +12,18 @@ namespace config
 
 struct configuration
 {
+  typedef std::unique_ptr<configuration> ptr;
+  struct logger_configuration
+  {
+    std::string name;
+    std::string filepath;
+    std::string pattern;
+  } logger;
   struct fs_configuration
   {
-    std::string name; ///< The name of the default file system.
-                      ///< May be "local" or a host:port for DFS.
+    std::string host;   ///< The host of the default file system.
+                        ///< May be "localhost" or a IP address for DFS.
+    std::uint64_t port; ///< The port of the default file system.
   } fs;
   struct file_configuration
   {
@@ -109,7 +118,7 @@ struct configuration
   } mapred;
 };
 
-using configuration_ptr = std::unique_ptr<configuration>;
+using configuration_ptr = configuration::ptr;
 
 configuration_ptr parse_configuration(const std::string_view &filepath);
 configuration_ptr parse_configuration(std::ifstream &file);

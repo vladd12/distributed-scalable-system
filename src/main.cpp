@@ -4,7 +4,7 @@
 
 void test(config::configuration_ptr &cfg)
 {
-  std::cout << cfg->dfs.name_dir << ' ' << cfg->dfs.data_dir << '\n';
+  std::cout << cfg->fs.host << ':' << cfg->fs.port << '\n';
 }
 
 int main(int argc, char *argv[])

@@ -28,14 +28,15 @@ set(DCS_TESTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tests")
 
 set(DCS_DAEMON_HEADERS
   "${DCS_SOURCES_DIR}/core/cmd_line_args.hpp"
+  "${DCS_SOURCES_DIR}/core/logger.hpp"
   "${DCS_SOURCES_DIR}/config/configuration.hpp"
+  "${DCS_SOURCES_DIR}/config/configuration_v2.hpp"
   "${DCS_SOURCES_DIR}/fs/file_system.hpp"
-  "${DCS_SOURCES_DIR}/utils/logger.hpp"
 )
 set(DCS_DAEMON_SOURCES
   "${DCS_SOURCES_DIR}/core/cmd_line_args.cpp"
+  "${DCS_SOURCES_DIR}/core/logger.cpp"
   "${DCS_SOURCES_DIR}/config/configuration.cpp"
-  "${DCS_SOURCES_DIR}/utils/logger.cpp"
   "${DCS_SOURCES_DIR}/main.cpp"
 )
 

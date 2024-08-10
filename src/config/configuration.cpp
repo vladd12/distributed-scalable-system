@@ -13,11 +13,12 @@ configuration_ptr parse_configuration(const std::string_view &filepath)
 
 configuration_ptr parse_configuration(std::ifstream &file)
 {
-  nlohmann::json data = nlohmann::json::parse(file, nullptr, true, true);
+  const nlohmann::json data = nlohmann::json::parse(file, nullptr, true, true);
   return configuration_ptr { //
     new configuration {
         .fs {
-            .name = data["fs"]["name"], //
+            .host = data["fs"]["host"], //
+            .port = data["fs"]["port"]  //
         },
         .file {
             .limit = data["file"]["limit"],        //
