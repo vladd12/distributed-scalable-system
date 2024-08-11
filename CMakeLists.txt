@@ -37,6 +37,7 @@ set(DCS_DAEMON_SOURCES
   "${DCS_SOURCES_DIR}/core/cmd_line_args.cpp"
   "${DCS_SOURCES_DIR}/core/logger.cpp"
   "${DCS_SOURCES_DIR}/config/configuration.cpp"
+  "${DCS_SOURCES_DIR}/config/configuration_v2.cpp"
   "${DCS_SOURCES_DIR}/main.cpp"
 )
 
