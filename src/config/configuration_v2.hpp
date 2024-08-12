@@ -23,6 +23,14 @@ struct required_datatype_selector<T, false>
   typedef std::optional<T> type;
 };
 
+template <typename... Ts> //
+struct type_holder
+{
+};
+
+// explicit deduction guide
+template <typename... Ts> type_holder(Ts...) -> type_holder<Ts...>;
+
 template <typename T, auto &name, bool required> //
 class json_field_base
 {
@@ -73,8 +81,12 @@ public:
     return field;
   }
 
-  template <auto &required_name, std::enable_if_t<required_name == field_name, bool> = true> //
-  consteval value_type &get() noexcept
+  [[nodiscard]] operator value_type &() noexcept
+  {
+    return field;
+  }
+
+  [[nodiscard]] operator const value_type &() const noexcept
   {
     return field;
   }
@@ -116,17 +128,38 @@ public:
   }
 };
 
-template <auto &name, class... Fields> //
-struct json_struct : public Fields...
+template <typename T, auto &name> //
+struct json_struct : public T
 {
 public:
   static constexpr std::string_view struct_name = std::string_view(name);
 
-  explicit inline json_struct(const njson &data) : Fields(data[struct_name])...
+  template <typename... Ts>                                                           //
+  inline explicit json_struct(const njson &data, [[maybe_unused]] type_holder<Ts...>) //
+      : T(std::move(Ts(data[struct_name])...))                                        //
   {
   }
 
-  explicit inline json_struct(njson &&data) : Fields(std::move(data[struct_name]))...
+  template <typename... Ts>                                                      //
+  inline explicit json_struct(njson &&data, [[maybe_unused]] type_holder<Ts...>) //
+      : T(std::move(Ts(std::move(data[struct_name]))...))                        //
+  {
+  }
+};
+
+template <typename T> //
+struct json_struct_root : public T
+{
+public:
+  template <typename... Ts>                                                                //
+  inline explicit json_struct_root(const njson &data, [[maybe_unused]] type_holder<Ts...>) //
+      : T(std::move(Ts(data)...))                                                          //
+  {
+  }
+
+  template <typename... Ts>                                                           //
+  inline explicit json_struct_root(njson &&data, [[maybe_unused]] type_holder<Ts...>) //
+      : T(std::move(Ts(std::move(data))...))                                          //
   {
   }
 };
