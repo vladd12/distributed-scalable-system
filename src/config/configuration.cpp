@@ -16,8 +16,6 @@ configuration_ptr parse_configuration(const std::string_view &filepath)
 configuration_ptr parse_configuration(std::ifstream &file)
 {
   const nlohmann::json data = nlohmann::json::parse(file, nullptr, true, true);
-  test::test01();
-  // foo(data);
   return configuration_ptr { //
     new configuration {
         .fs {

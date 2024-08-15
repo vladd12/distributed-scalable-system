@@ -50,8 +50,9 @@ class json_field_base
 {
 public:
   static constexpr std::string_view field_name = std::string_view(name);
+  using array_type = array_datatype_checker_t<std::remove_cvref_t<T>>;
+  using clean_type = std::remove_cvref_t<std::remove_extent_t<T>>;
   using value_type = required_datatype_selector_t<T, required>;
-  using element_type = std::remove_cvref_t<std::remove_extent_t<T>>;
 
 protected:
   value_type field;
@@ -266,13 +267,6 @@ public:
 };
 
 } // namespace detail
-
-namespace config
-{
-
-void foo(const detail::njson &data);
-
-} // namespace config
 
 namespace test
 {
