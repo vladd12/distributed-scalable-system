@@ -1,58 +1,21 @@
 #pragma once
 
+#include <config/json/detail/type_traits.hpp>
 #include <nlohmann/json.hpp>
-#include <optional>
 #include <string_view>
-#include <type_traits>
-#include <vector>
 
-namespace detail
+namespace json
 {
 using njson = nlohmann::json;
-
-template <typename T> //
-struct array_datatype_checker
-{
-  typedef std::conditional_t<std::is_array_v<T>, std::vector<std::remove_extent_t<T>>, T> type;
-};
-
-template <typename T> //
-using array_datatype_checker_t = typename array_datatype_checker<T>::type;
-
-template <typename T, bool required> //
-struct required_datatype_selector;
-
-template <typename T> //
-struct required_datatype_selector<T, true>
-{
-  typedef array_datatype_checker_t<T> type;
-};
-
-template <typename T> //
-struct required_datatype_selector<T, false>
-{
-  typedef std::optional<array_datatype_checker_t<T>> type;
-};
-
-template <typename T, bool required> //
-using required_datatype_selector_t = typename required_datatype_selector<T, required>::type;
-
-template <typename... Ts> //
-struct type_holder
-{
-};
-
-// explicit deduction guide (not needed)
-template <typename... Ts> type_holder(Ts...) -> type_holder<Ts...>;
 
 template <typename T, auto &name, bool required> //
 class json_field_base
 {
 public:
   static constexpr std::string_view field_name = std::string_view(name);
-  using array_type = array_datatype_checker_t<std::remove_cvref_t<T>>;
+  using array_type = detail::array_datatype_checker_t<std::remove_cvref_t<T>>;
   using clean_type = std::remove_cvref_t<std::remove_extent_t<T>>;
-  using value_type = required_datatype_selector_t<T, required>;
+  using value_type = detail::required_datatype_selector_t<T, required>;
 
 protected:
   value_type field;
@@ -206,71 +169,4 @@ public:
   }
 };
 
-template <typename T, auto &name> //
-struct json_struct : public T
-{
-public:
-  static constexpr std::string_view struct_name = std::string_view(name);
-
-  template <typename... Ts>                           //
-  inline explicit json_struct(const njson &data,      //
-      [[maybe_unused]] type_holder<Ts...>)            //
-      : T(std::forward<Ts>(Ts(data[struct_name]))...) //
-  {
-  }
-
-  template <typename... Ts>                                      //
-  inline explicit json_struct(njson &&data,                      //
-      [[maybe_unused]] type_holder<Ts...>)                       //
-      : T(std::forward<Ts>(Ts(std::move(data[struct_name])))...) //
-  {
-  }
-
-  inline explicit json_struct(const njson &data) //
-      : json_struct(data, T::holder)             //
-  {
-  }
-
-  inline explicit json_struct(njson &&data)     //
-      : json_struct(std::move(data), T::holder) //
-  {
-  }
-};
-
-template <typename T> //
-struct json_unnamed_struct : public T
-{
-public:
-  template <typename... Ts>                              //
-  inline explicit json_unnamed_struct(const njson &data, //
-      [[maybe_unused]] type_holder<Ts...>)               //
-      : T(std::move(std::forward<Ts>(Ts(data))...))      //
-  {
-  }
-
-  template <typename... Ts>                                    //
-  inline explicit json_unnamed_struct(njson &&data,            //
-      [[maybe_unused]] type_holder<Ts...>)                     //
-      : T(std::move(std::forward<Ts>(Ts(std::move(data)))...)) //
-  {
-  }
-
-  inline explicit json_unnamed_struct(const njson &data) //
-      : json_unnamed_struct(data, T::holder)             //
-  {
-  }
-
-  inline explicit json_unnamed_struct(njson &&data)     //
-      : json_unnamed_struct(std::move(data), T::holder) //
-  {
-  }
-};
-
-} // namespace detail
-
-namespace test
-{
-
-void test01();
-
-} // namespace test
+} // namespace json

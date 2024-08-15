@@ -1,9 +1,11 @@
-#include <configuration_v2.hpp>
+#include <config/json/json_struct.hpp>
+#include <config/json/json_unnamed_struct.hpp>
 #include <gtest/gtest.h>
 
 namespace logger_test
 {
 using namespace detail;
+using namespace json;
 
 constexpr static auto logger_str = "logger";
 constexpr static auto name_str = "name";
@@ -36,25 +38,25 @@ constexpr static auto data01 = R"(
 
 struct rotate_tag
 {
-  detail::json_field_required<int, max_size_str> max_size;
-  detail::json_field_required<int, max_files_str> max_files;
+  json_field_required<int, max_size_str> max_size;
+  json_field_required<int, max_files_str> max_files;
   static constexpr auto holder = detail::type_holder<decltype(max_size), decltype(max_files)> {};
 };
 typedef json_struct<rotate_tag, rotate_str> rotate_configuration;
 
 struct async_tag
 {
-  detail::json_field_required<int, thread_pool_size_str> thread_pool_size;
-  detail::json_field_required<int, queue_size_str> queue_size;
+  json_field_required<int, thread_pool_size_str> thread_pool_size;
+  json_field_required<int, queue_size_str> queue_size;
   static constexpr auto holder = detail::type_holder<decltype(thread_pool_size), decltype(queue_size)> {};
 };
 typedef json_struct<async_tag, async_str> async_configuration;
 
 struct logger_tag
 {
-  detail::json_field_required<std::string, name_str> name;
-  detail::json_field_required<std::string, filepath_str> filepath;
-  detail::json_field_optional<std::string, pattern_str> pattern;
+  json_field_required<std::string, name_str> name;
+  json_field_required<std::string, filepath_str> filepath;
+  json_field_optional<std::string, pattern_str> pattern;
   rotate_configuration rotate;
   async_configuration async;
   static constexpr auto holder = detail::type_holder<                                          //

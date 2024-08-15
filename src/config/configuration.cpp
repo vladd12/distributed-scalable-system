@@ -1,7 +1,5 @@
 #include "config/configuration.hpp"
 
-#include "config/configuration_v2.hpp"
-
 #include <nlohmann/json.hpp>
 
 namespace config
