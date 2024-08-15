@@ -2,6 +2,8 @@
 
 #include "config/configuration_v2.hpp"
 
+#include <iostream>
+
 namespace config
 {
 
@@ -29,6 +31,7 @@ using namespace detail;
 constexpr static auto logger_str = "logger";
 constexpr static auto name_str = "name";
 constexpr static auto filepath_str = "filepath";
+constexpr static auto pattern_str = "pattern";
 constexpr static auto rotate_str = "rotate";
 constexpr static auto max_size_str = "max-size";
 constexpr static auto max_files_str = "max-files";
@@ -36,13 +39,7 @@ constexpr static auto async_str = "async";
 constexpr static auto thread_pool_size_str = "thread-pool-size";
 constexpr static auto queue_size_str = "queue-size";
 
-// struct rotate_configuration : public json_struct<rotate_configuration, rotate_str>
-//{
-//};
-
-void test01()
-{
-  const njson ex1 = njson::parse(R"(
+constexpr static auto data01 = R"(
 {
     "logger": {
         "name": "default_logger",
@@ -56,9 +53,53 @@ void test01()
             "thread-pool-size": 1,
             "queue-size": 1024
         }
-    },
+    }
 }
-)");
+)";
+
+struct rotate_tag
+{
+  detail::json_field_required<int, max_size_str> max_size;
+  detail::json_field_required<int, max_files_str> max_files;
+  static constexpr auto holder = detail::type_holder<decltype(max_size), decltype(max_files)> {};
+};
+typedef json_struct<rotate_tag, rotate_str> rotate_configuration;
+
+struct async_tag
+{
+  detail::json_field_required<int, thread_pool_size_str> thread_pool_size;
+  detail::json_field_required<int, queue_size_str> queue_size;
+  static constexpr auto holder = detail::type_holder<decltype(thread_pool_size), decltype(queue_size)> {};
+};
+typedef json_struct<async_tag, async_str> async_configuration;
+
+struct logger_tag
+{
+  detail::json_field_required<std::string, name_str> name;
+  detail::json_field_required<std::string, filepath_str> filepath;
+  detail::json_field_optional<std::string, pattern_str> pattern;
+  rotate_configuration rotate;
+  async_configuration async;
+  static constexpr auto holder = detail::type_holder<                                          //
+      decltype(name), decltype(filepath), decltype(pattern), decltype(rotate), decltype(async) //
+      > {};                                                                                    //
+};
+typedef json_struct<logger_tag, logger_str> logger_configuration;
+
+struct root_tag
+{
+  logger_configuration logger;
+  static constexpr auto holder = detail::type_holder<decltype(logger)> {};
+};
+typedef json_unnamed_struct<root_tag> root_configuration;
+
+void test01()
+{
+  njson ex1 = njson::parse(data01);
+  root_configuration cfg01 { ex1 };
+  std::cout << cfg01.logger.async.queue_size << '\n';
+  root_configuration cfg02 { std::move(ex1) };
+  std::cout << cfg02.logger.rotate.max_files << '\n';
 }
 
 } // namespace test
