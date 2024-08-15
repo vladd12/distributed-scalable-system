@@ -6,6 +6,8 @@ project(dcs VERSION 1.0.0 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+option(BUILD_DCS_TESTS "Build dcs tests" ON)
+
 # CMake's fetch content options
 include(FetchContent)
 set(FETCHCONTENT_UPDATES_DISCONNECTED ON)
@@ -61,3 +63,12 @@ add_custom_command(
   ${CMAKE_CURRENT_SOURCE_DIR}/config/default_config.json
   ${CMAKE_CURRENT_BINARY_DIR}/default_config.json
 )
+
+# If enabled building tests for some features
+if(BUILD_DCS_TESTS)
+  message(STATUS "Tests building for dcs is enabled")
+  include(CTest)
+  include(get_gtest)
+  enable_testing(true)
+  add_subdirectory(tests)
+endif()
