@@ -115,3 +115,71 @@ TEST(json_unit_test, logger_test_move)
   const int &queue_size = cfg.logger.async.queue_size;
   ASSERT_EQ(queue_size, 1024);
 }
+
+namespace array_required_test
+{
+using namespace detail;
+using namespace json;
+
+constexpr static auto data02 = R"(
+{
+  "name": "default_logger",
+  "value": "some_value",
+  "flag": true,
+  "options": [
+    { "key": "AAA", "value": "111" },
+    { "key": "BBB", "value": "222" }
+  ],
+  "other": {
+    "AAA": 111,
+    "BBB": 222
+  }
+}
+)";
+
+constexpr static auto name_str = "name";
+constexpr static auto key_str = "key";
+constexpr static auto value_str = "value";
+constexpr static auto flag_str = "flag";
+constexpr static auto options_str = "options";
+constexpr static auto other_str = "other";
+constexpr static auto AAA_str = "AAA";
+constexpr static auto BBB_str = "BBB";
+
+struct key_value_tag
+{
+  json_field_required<std::string, key_str> key;
+  json_field_required<std::string, value_str> value;
+  static constexpr auto holder = detail::type_holder<decltype(key), decltype(value)> {};
+};
+typedef json_unnamed_struct<key_value_tag> key_value_configuration;
+
+struct other_tag
+{
+  json_field_required<int, AAA_str> AAA;
+  json_field_required<int, BBB_str> BBB;
+  static constexpr auto holder = detail::type_holder<decltype(AAA), decltype(BBB)> {};
+};
+typedef json_struct<other_tag, other_str> other_configuration;
+
+struct root_tag
+{
+  json_field_required<std::string, name_str> name;
+  json_field_required<std::string, value_str> value;
+  json_field_optional<bool, flag_str> flag;
+  json_field_required<key_value_configuration[], options_str> options;
+  other_configuration other;
+  static constexpr auto holder = detail::type_holder< //
+      decltype(name), decltype(value), decltype(flag), decltype(options), decltype(other)> {};
+};
+typedef json_unnamed_struct<root_tag> root_configuration;
+
+TEST(json_unit_test, array_required_test)
+{
+  using namespace array_required_test;
+  [[maybe_unused]] njson json = njson::parse(data02);
+  // TODO: not compile this
+  // root_configuration cfg { json };
+}
+
+}

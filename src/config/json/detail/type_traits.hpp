@@ -28,7 +28,7 @@ struct required_datatype_selector<T, true>
 template <typename T> //
 struct required_datatype_selector<T, false>
 {
-  typedef std::optional<array_datatype_checker_t<T>> type;
+  typedef std::optional<T> type;
 };
 
 template <typename T, bool required> //

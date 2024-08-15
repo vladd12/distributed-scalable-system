@@ -15,32 +15,32 @@ public:
   static constexpr std::string_view field_name = std::string_view(name);
   using array_type = detail::array_datatype_checker_t<std::remove_cvref_t<T>>;
   using clean_type = std::remove_cvref_t<std::remove_extent_t<T>>;
-  using value_type = detail::required_datatype_selector_t<T, required>;
+  using stored_type = detail::required_datatype_selector_t<array_type, required>;
 
 protected:
-  value_type field;
+  stored_type field;
 
 public:
   inline json_field_base() noexcept
   {
   }
 
-  inline json_field_base(const value_type &data) : field(data)
+  inline json_field_base(const stored_type &data) : field(data)
   {
   }
 
-  inline json_field_base(value_type &&data) : field(std::move(data))
+  inline json_field_base(stored_type &&data) : field(std::move(data))
   {
   }
 
   inline json_field_base(const json_field_base &rhs) //
-      noexcept(noexcept(value_type(std::declval<const value_type &>())))
+      noexcept(noexcept(stored_type(std::declval<const stored_type &>())))
       : field(rhs.field)
   {
   }
 
   inline json_field_base(json_field_base &&rhs) //
-      noexcept(noexcept(value_type(std::declval<value_type &&>())))
+      noexcept(noexcept(stored_type(std::declval<stored_type &&>())))
       : field(std::move(rhs.field))
   {
   }
@@ -55,22 +55,28 @@ public:
     field = std::move(rhs.field);
   }
 
-  [[nodiscard]] inline operator value_type() const noexcept
+  /// \brief Conversion operator for not optional and not array stored data types.
+  template <typename R = std::enable_if_t<required && !std::is_array_v<T>, stored_type>>
+  [[nodiscard]] inline operator R() const noexcept
   {
     return field;
   }
 
-  [[nodiscard]] inline operator value_type &() noexcept
+  /// \brief Conversion operator for not optional and not array stored data types.
+  template <typename R = std::enable_if_t<required && !std::is_array_v<T>, stored_type>>
+  [[nodiscard]] inline operator R &() noexcept
   {
     return field;
   }
 
-  [[nodiscard]] inline operator const value_type &() const noexcept
+  /// \brief Conversion operator for not optional and not array stored data types.
+  template <typename R = std::enable_if_t<required && !std::is_array_v<T>, stored_type>>
+  [[nodiscard]] inline operator const R &() const noexcept
   {
     return field;
   }
 
-  [[nodiscard]] constexpr inline bool access() const noexcept
+  [[nodiscard]] constexpr inline bool has_value() const noexcept
   {
     if constexpr (required)
       return true;
@@ -87,13 +93,13 @@ public:
 
   template <typename Element = T, std::enable_if_t<!std::is_array_v<Element>, bool> = true> //
   inline explicit json_field_required(const njson &data)                                    //
-      : base_type(base_type::value_type(data[base_type::field_name]))                       //
+      : base_type(base_type::stored_type(data[base_type::field_name]))                      //
   {
   }
 
   template <typename Element = T, std::enable_if_t<!std::is_array_v<Element>, bool> = true> //
   inline explicit json_field_required(njson &&data)                                         //
-      : base_type(std::move(base_type::value_type(data[base_type::field_name])))            //
+      : base_type(std::move(base_type::stored_type(data[base_type::field_name])))           //
   {
   }
 
