@@ -33,7 +33,6 @@ set(DCS_DAEMON_HEADERS
   "${DCS_SOURCES_DIR}/core/logger.hpp"
   "${DCS_SOURCES_DIR}/config/configuration.hpp"
 
-  "${DCS_SOURCES_DIR}/config/json/detail/type_traits.hpp"
   "${DCS_SOURCES_DIR}/config/json/json_field_base.hpp"
   "${DCS_SOURCES_DIR}/config/json/json_struct.hpp"
   "${DCS_SOURCES_DIR}/config/json/json_unnamed_struct.hpp"

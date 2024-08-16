@@ -1,8 +1,20 @@
 #pragma once
 
-#include <config/json/detail/type_traits.hpp>
 #include <nlohmann/json.hpp>
+#include <optional>
 #include <string_view>
+#include <type_traits>
+#include <vector>
+
+namespace detail
+{
+
+template <typename... Ts> //
+struct type_holder
+{
+};
+
+} // namespace detail
 
 namespace json
 {
