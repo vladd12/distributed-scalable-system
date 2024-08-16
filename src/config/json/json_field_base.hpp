@@ -12,10 +12,29 @@ template <typename T, auto &name, bool required> //
 class json_field_base
 {
 public:
-  static constexpr std::string_view field_name = std::string_view(name);
-  using array_type = detail::array_datatype_checker_t<std::remove_cvref_t<T>>;
+  // Static type instance restrictions
+  static_assert(!std::is_const_v<T>, "Must be not a const type");
+  static_assert(!std::is_reference_v<T>, "Must be not a reference type");
+  static_assert(!std::is_rvalue_reference_v<T>, "Must be not a rvalue reference type");
+
+  static constexpr std::string_view field_name = std::string_view(name); ///< json field name
   using clean_type = std::remove_cvref_t<std::remove_extent_t<T>>;
-  using stored_type = detail::required_datatype_selector_t<array_type, required>;
+
+  static constexpr auto is_optional = !required;
+  static constexpr auto is_array = std::is_array_v<std::remove_cvref_t<T>>;
+
+  // stored_type is type for these cases:
+  // std::optional<std::vector<T>> for <is_optional = true,  is_array = true>
+  // std::optional<T>              for <is_optional = true,  is_array = false>
+  // std::vector<T>                for <is_optional = false, is_array = true>
+  // T                             for <is_optional = false, is_array = false>
+  using stored_type = std::conditional_t<is_optional,                                                  //
+      std::conditional_t<is_array, std::optional<std::vector<clean_type>>, std::optional<clean_type>>, //
+      std::conditional_t<is_array, std::vector<clean_type>, clean_type>>;
+
+  // external_type is type for external acces to stored field data
+  template <bool is_array> //
+  using external_type = std::conditional_t<is_array, std::vector<clean_type>, clean_type>;
 
 protected:
   stored_type field;
@@ -56,24 +75,33 @@ public:
   }
 
   /// \brief Conversion operator for not optional and not array stored data types.
-  template <typename R = std::enable_if_t<required && !std::is_array_v<T>, stored_type>>
-  [[nodiscard]] inline operator R() const noexcept
+  template <typename R = external_type<is_array>> //
+  [[nodiscard]] inline operator R() const
   {
-    return field;
+    if constexpr (is_optional)
+      field.value();
+    else
+      return field;
   }
 
   /// \brief Conversion operator for not optional and not array stored data types.
-  template <typename R = std::enable_if_t<required && !std::is_array_v<T>, stored_type>>
-  [[nodiscard]] inline operator R &() noexcept
+  template <typename R = external_type<is_array>> //
+  [[nodiscard]] inline operator R &()
   {
-    return field;
+    if constexpr (is_optional)
+      return field.value();
+    else
+      return field;
   }
 
   /// \brief Conversion operator for not optional and not array stored data types.
-  template <typename R = std::enable_if_t<required && !std::is_array_v<T>, stored_type>>
-  [[nodiscard]] inline operator const R &() const noexcept
+  template <typename R = external_type<is_array>> //
+  [[nodiscard]] inline operator const R &() const
   {
-    return field;
+    if constexpr (is_optional)
+      field.value();
+    else
+      return field;
   }
 
   [[nodiscard]] constexpr inline bool has_value() const noexcept

@@ -84,9 +84,8 @@ TEST(json_unit_test, logger_test_copy)
   ASSERT_EQ(name, "default_logger");
   const std::string &filepath = cfg.logger.filepath;
   ASSERT_EQ(filepath, "logs/log.txt");
-  // TODO: implicit getting stored type in std::optional containerd
-  // const std::string &pattern = cfg.logger.pattern;
-  // ASSERT_EQ(pattern, "[%H:%M:%S %z] [%n] [%^---%L---%$] [thread %t] %v");
+  const std::string &pattern = cfg.logger.pattern;
+  ASSERT_EQ(pattern, "[%H:%M:%S %z] [%n] [%^---%L---%$] [thread %t] %v");
   const int &max_size = cfg.logger.rotate.max_size;
   ASSERT_EQ(max_size, 10);
   const int &max_files = cfg.logger.rotate.max_files;
