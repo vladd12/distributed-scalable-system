@@ -79,21 +79,13 @@ TEST(json_unit_test, logger_test_copy)
   using namespace logger_test;
   njson json = njson::parse(data01);
   root_configuration cfg { json };
-  // TODO: binary operator== overload for comparing data
-  const std::string &name = cfg.logger.name;
-  ASSERT_EQ(name, "default_logger");
-  const std::string &filepath = cfg.logger.filepath;
-  ASSERT_EQ(filepath, "logs/log.txt");
-  const std::string &pattern = cfg.logger.pattern;
-  ASSERT_EQ(pattern, "[%H:%M:%S %z] [%n] [%^---%L---%$] [thread %t] %v");
-  const int &max_size = cfg.logger.rotate.max_size;
-  ASSERT_EQ(max_size, 10);
-  const int &max_files = cfg.logger.rotate.max_files;
-  ASSERT_EQ(max_files, 10);
-  const int &thread_pool_size = cfg.logger.async.thread_pool_size;
-  ASSERT_EQ(thread_pool_size, 1);
-  const int &queue_size = cfg.logger.async.queue_size;
-  ASSERT_EQ(queue_size, 1024);
+  ASSERT_EQ(cfg.logger.name, "default_logger");
+  ASSERT_EQ(cfg.logger.filepath, "logs/log.txt");
+  ASSERT_EQ(cfg.logger.pattern, "[%H:%M:%S %z] [%n] [%^---%L---%$] [thread %t] %v");
+  ASSERT_EQ(cfg.logger.rotate.max_size, 10);
+  ASSERT_EQ(cfg.logger.rotate.max_files, 10);
+  ASSERT_EQ(cfg.logger.async.thread_pool_size, 1);
+  ASSERT_EQ(cfg.logger.async.queue_size, 1024);
 }
 
 TEST(json_unit_test, logger_test_move)
@@ -101,18 +93,13 @@ TEST(json_unit_test, logger_test_move)
   using namespace logger_test;
   njson json = njson::parse(data01);
   root_configuration cfg { std::move(json) };
-  const std::string &name = cfg.logger.name;
-  ASSERT_EQ(name, "default_logger");
-  const std::string &filepath = cfg.logger.filepath;
-  ASSERT_EQ(filepath, "logs/log.txt");
-  const int &max_size = cfg.logger.rotate.max_size;
-  ASSERT_EQ(max_size, 10);
-  const int &max_files = cfg.logger.rotate.max_files;
-  ASSERT_EQ(max_files, 10);
-  const int &thread_pool_size = cfg.logger.async.thread_pool_size;
-  ASSERT_EQ(thread_pool_size, 1);
-  const int &queue_size = cfg.logger.async.queue_size;
-  ASSERT_EQ(queue_size, 1024);
+  ASSERT_EQ(cfg.logger.name, "default_logger");
+  ASSERT_EQ(cfg.logger.filepath, "logs/log.txt");
+  ASSERT_EQ(cfg.logger.pattern, "[%H:%M:%S %z] [%n] [%^---%L---%$] [thread %t] %v");
+  ASSERT_EQ(cfg.logger.rotate.max_size, 10);
+  ASSERT_EQ(cfg.logger.rotate.max_files, 10);
+  ASSERT_EQ(cfg.logger.async.thread_pool_size, 1);
+  ASSERT_EQ(cfg.logger.async.queue_size, 1024);
 }
 
 namespace array_required_test
@@ -178,7 +165,7 @@ TEST(json_unit_test, array_required_test)
   using namespace array_required_test;
   [[maybe_unused]] njson json = njson::parse(data02);
   // TODO: not compile this
-  // root_configuration cfg { json };
+  root_configuration cfg { json };
 }
 
 }

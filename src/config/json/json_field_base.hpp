@@ -211,6 +211,39 @@ public:
       return field;
   }
 
+  /// \brief Comparison operator for equality checking.
+  [[nodiscard]] inline bool operator==(const external_type &rhs) const noexcept
+  {
+    if constexpr (is_optional)
+    {
+      if (field.has_value())
+        return field.value() == rhs;
+      else
+        return false;
+    }
+    else
+      return field == rhs;
+  }
+
+  /// \brief Comparison operator for equality checking.
+  [[nodiscard]] inline bool operator==(const json_field_base &rhs) const noexcept
+  {
+    return field == rhs.field;
+  }
+
+  /// \brief Comparison operator for inequality checking.
+  [[nodiscard]] inline bool operator!=(const external_type &rhs) const noexcept
+  {
+    return !(*this == rhs);
+  }
+
+  /// \brief Comparison operator for inequality checking.
+  [[nodiscard]] inline bool operator!=(const json_field_base &rhs) const noexcept
+  {
+    return !(*this == rhs);
+  }
+
+  /// \brief Checks whether field contains a value.
   [[nodiscard]] constexpr inline bool has_value() const noexcept
   {
     if constexpr (required)

@@ -12,14 +12,14 @@ public:
   template <typename... Ts>                              //
   inline explicit json_unnamed_struct(const njson &data, //
       [[maybe_unused]] detail::type_holder<Ts...>)       //
-      : T(std::move(std::forward<Ts>(Ts(data))...))      //
+      : T(std::forward<Ts>(Ts(data))...)                 //
   {
   }
 
-  template <typename... Ts>                                    //
-  inline explicit json_unnamed_struct(njson &&data,            //
-      [[maybe_unused]] detail::type_holder<Ts...>)             //
-      : T(std::move(std::forward<Ts>(Ts(std::move(data)))...)) //
+  template <typename... Ts>                         //
+  inline explicit json_unnamed_struct(njson &&data, //
+      [[maybe_unused]] detail::type_holder<Ts...>)  //
+      : T(std::forward<Ts>(Ts(std::move(data)))...) //
   {
   }
 
