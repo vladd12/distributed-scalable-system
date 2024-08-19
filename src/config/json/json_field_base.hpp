@@ -144,14 +144,14 @@ public:
   inline explicit json_field_base(const njson &data)                                                       //
   {
     if (data.contains(field_name))
-      field = data[field_name];
+      field.emplace(data[field_name]);
   }
 
   template <typename Element = T, std::enable_if_t<!std::is_array_v<Element> && is_optional, bool> = true> //
   inline explicit json_field_base(njson &&data)                                                            //
   {
     if (data.contains(field_name))
-      field = std::move(data[field_name]);
+      field.emplace(std::move(data[field_name]));
   }
 
   template <typename Array = T, std::enable_if_t<std::is_array_v<Array> && is_optional, bool> = true> //
@@ -246,10 +246,28 @@ public:
   /// \brief Checks whether field contains a value.
   [[nodiscard]] constexpr inline bool has_value() const noexcept
   {
-    if constexpr (required)
-      return true;
-    else
+    if constexpr (is_optional)
       return field.has_value();
+    else
+      return true;
+  }
+
+  template <typename R = T, std::enable_if_t<std::is_class_v<R>, bool> = true> //
+  constexpr R *operator->() noexcept
+  {
+    if constexpr (is_optional)
+      return field.operator->();
+    else
+      return &field;
+  }
+
+  template <typename R = T, std::enable_if_t<std::is_class_v<R>, bool> = true> //
+  constexpr const R *operator->() const noexcept
+  {
+    if constexpr (is_optional)
+      return field.operator->();
+    else
+      return &field;
   }
 };
 

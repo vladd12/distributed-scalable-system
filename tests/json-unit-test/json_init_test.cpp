@@ -18,7 +18,7 @@ constexpr static auto async_str = "async";
 constexpr static auto thread_pool_size_str = "thread-pool-size";
 constexpr static auto queue_size_str = "queue-size";
 
-constexpr static auto data01 = R"(
+constexpr static auto full_logger = R"(
 {
     "logger": {
         "name": "default_logger",
@@ -42,7 +42,7 @@ struct rotate_tag
   json_field_required<int, max_files_str> max_files;
   static constexpr auto holder = detail::type_holder<decltype(max_size), decltype(max_files)> {};
 };
-typedef json_struct<rotate_tag, rotate_str> rotate_configuration;
+typedef json_unnamed_struct<rotate_tag> rotate_configuration;
 
 struct async_tag
 {
@@ -50,24 +50,24 @@ struct async_tag
   json_field_required<int, queue_size_str> queue_size;
   static constexpr auto holder = detail::type_holder<decltype(thread_pool_size), decltype(queue_size)> {};
 };
-typedef json_struct<async_tag, async_str> async_configuration;
+typedef json_unnamed_struct<async_tag> async_configuration;
 
 struct logger_tag
 {
   json_field_required<std::string, name_str> name;
   json_field_required<std::string, filepath_str> filepath;
   json_field_optional<std::string, pattern_str> pattern;
-  rotate_configuration rotate;
-  async_configuration async;
+  json_field_optional<rotate_configuration, rotate_str> rotate;
+  json_field_optional<async_configuration, async_str> async;
   static constexpr auto holder = detail::type_holder<                                          //
       decltype(name), decltype(filepath), decltype(pattern), decltype(rotate), decltype(async) //
       > {};                                                                                    //
 };
-typedef json_struct<logger_tag, logger_str> logger_configuration;
+typedef json_unnamed_struct<logger_tag> logger_configuration;
 
 struct root_tag
 {
-  logger_configuration logger;
+  json_field_required<logger_configuration, logger_str> logger;
   static constexpr auto holder = detail::type_holder<decltype(logger)> {};
 };
 typedef json_unnamed_struct<root_tag> root_configuration;
@@ -77,29 +77,29 @@ typedef json_unnamed_struct<root_tag> root_configuration;
 TEST(json_unit_test, logger_test_copy)
 {
   using namespace logger_test;
-  njson json = njson::parse(data01);
+  njson json = njson::parse(full_logger);
   root_configuration cfg { json };
-  ASSERT_EQ(cfg.logger.name, "default_logger");
-  ASSERT_EQ(cfg.logger.filepath, "logs/log.txt");
-  ASSERT_EQ(cfg.logger.pattern, "[%H:%M:%S %z] [%n] [%^---%L---%$] [thread %t] %v");
-  ASSERT_EQ(cfg.logger.rotate.max_size, 10);
-  ASSERT_EQ(cfg.logger.rotate.max_files, 10);
-  ASSERT_EQ(cfg.logger.async.thread_pool_size, 1);
-  ASSERT_EQ(cfg.logger.async.queue_size, 1024);
+  ASSERT_EQ(cfg.logger->name, "default_logger");
+  ASSERT_EQ(cfg.logger->filepath, "logs/log.txt");
+  ASSERT_EQ(cfg.logger->pattern, "[%H:%M:%S %z] [%n] [%^---%L---%$] [thread %t] %v");
+  ASSERT_EQ(cfg.logger->rotate->max_size, 10);
+  ASSERT_EQ(cfg.logger->rotate->max_files, 10);
+  ASSERT_EQ(cfg.logger->async->thread_pool_size, 1);
+  ASSERT_EQ(cfg.logger->async->queue_size, 1024);
 }
 
 TEST(json_unit_test, logger_test_move)
 {
   using namespace logger_test;
-  njson json = njson::parse(data01);
+  njson json = njson::parse(full_logger);
   root_configuration cfg { std::move(json) };
-  ASSERT_EQ(cfg.logger.name, "default_logger");
-  ASSERT_EQ(cfg.logger.filepath, "logs/log.txt");
-  ASSERT_EQ(cfg.logger.pattern, "[%H:%M:%S %z] [%n] [%^---%L---%$] [thread %t] %v");
-  ASSERT_EQ(cfg.logger.rotate.max_size, 10);
-  ASSERT_EQ(cfg.logger.rotate.max_files, 10);
-  ASSERT_EQ(cfg.logger.async.thread_pool_size, 1);
-  ASSERT_EQ(cfg.logger.async.queue_size, 1024);
+  ASSERT_EQ(cfg.logger->name, "default_logger");
+  ASSERT_EQ(cfg.logger->filepath, "logs/log.txt");
+  ASSERT_EQ(cfg.logger->pattern, "[%H:%M:%S %z] [%n] [%^---%L---%$] [thread %t] %v");
+  ASSERT_EQ(cfg.logger->rotate->max_size, 10);
+  ASSERT_EQ(cfg.logger->rotate->max_files, 10);
+  ASSERT_EQ(cfg.logger->async->thread_pool_size, 1);
+  ASSERT_EQ(cfg.logger->async->queue_size, 1024);
 }
 
 namespace array_required_test
@@ -146,7 +146,7 @@ struct other_tag
   json_field_required<int, BBB_str> BBB;
   static constexpr auto holder = detail::type_holder<decltype(AAA), decltype(BBB)> {};
 };
-typedef json_struct<other_tag, other_str> other_configuration;
+typedef json_unnamed_struct<other_tag> other_configuration;
 
 struct root_tag
 {
@@ -154,18 +154,22 @@ struct root_tag
   json_field_required<std::string, value_str> value;
   json_field_optional<bool, flag_str> flag;
   json_field_required<key_value_configuration[], options_str> options;
-  other_configuration other;
+  json_field_optional<other_configuration, other_str> other;
   static constexpr auto holder = detail::type_holder< //
       decltype(name), decltype(value), decltype(flag), decltype(options), decltype(other)> {};
 };
 typedef json_unnamed_struct<root_tag> root_configuration;
 
+// TODO: delete this later :DDD
+#include <iostream>
+
 TEST(json_unit_test, array_required_test)
 {
   using namespace array_required_test;
   [[maybe_unused]] njson json = njson::parse(data02);
-  // TODO: not compile this
+  // TODO: improve this
   root_configuration cfg { json };
+  std::cout << cfg.other->AAA << '\n';
 }
 
 }
