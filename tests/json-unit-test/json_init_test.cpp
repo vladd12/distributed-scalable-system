@@ -2,6 +2,121 @@
 #include <config/json/json_unnamed_struct.hpp>
 #include <gtest/gtest.h>
 
+namespace base_test
+{
+using namespace detail;
+using namespace json;
+
+constexpr static auto base_full = R"(
+{
+  "value-int": 148536,
+  "value-bool": true,
+  "value-string": "some string, dude"
+}
+)";
+
+constexpr static auto base_optional = R"(
+{
+  "value-int": 258564
+}
+)";
+
+constexpr static auto value_int_str = "value-int";
+constexpr static auto value_bool_str = "value-bool";
+constexpr static auto value_string_str = "value-string";
+
+struct root_tag
+{
+  json_field_required<int, value_int_str> value_int;
+  json_field_optional<bool, value_bool_str> value_bool;
+  json_field_optional<std::string, value_string_str> value_string;
+  static constexpr auto holder = detail::type_holder< //
+      decltype(value_int), decltype(value_bool), decltype(value_string)> {};
+};
+typedef json_unnamed_struct<root_tag> root_configuration;
+
+TEST(json_unit_test, base_test_full)
+{
+  njson json = njson::parse(base_full);
+  root_configuration cfg { json };
+  static_assert(cfg.value_int.has_value());
+  ASSERT_EQ(cfg.value_int, 148536);
+  ASSERT_TRUE(cfg.value_bool.has_value());
+  ASSERT_EQ(cfg.value_bool, true);
+  ASSERT_TRUE(cfg.value_string.has_value());
+  ASSERT_EQ(cfg.value_string, "some string, dude");
+  const decltype(cfg.value_int) int_copy { cfg.value_int };
+  const decltype(cfg.value_int) int_move_copy { std::move(cfg.value_int) };
+  ASSERT_EQ(int_copy, int_move_copy);
+  const decltype(cfg.value_string) str_copy { cfg.value_string };
+  const decltype(cfg.value_string) str_move_copy { std::move(cfg.value_string) };
+  ASSERT_EQ(str_copy, str_move_copy);
+}
+
+TEST(json_unit_test, base_test_optional)
+{
+  root_configuration cfg { std::move(njson::parse(base_optional)) };
+  ASSERT_EQ(cfg.value_int, 258564);
+  ASSERT_FALSE(cfg.value_bool.has_value());
+  ASSERT_FALSE(cfg.value_string.has_value());
+  const decltype(cfg.value_bool) bool_copy { cfg.value_bool };
+  const decltype(cfg.value_bool) bool_move_copy { std::move(cfg.value_bool) };
+  ASSERT_EQ(bool_copy, bool_move_copy);
+  const decltype(cfg.value_string) str_copy { cfg.value_string };
+  const decltype(cfg.value_string) str_move_copy { std::move(cfg.value_string) };
+  ASSERT_EQ(str_copy, str_move_copy);
+}
+
+constexpr static auto base_array_full = R"(
+{
+  "values": [ "one", "two", "three" ],
+  "more-values": [ 1, 2, 3 ]
+}
+)";
+
+constexpr static auto base_array_optional = R"(
+{
+  "more-values": []
+}
+)";
+
+constexpr static auto values_str = "values";
+constexpr static auto more_values_str = "more-values";
+
+struct array_tag
+{
+  json_field_optional<std::string[], values_str> values;
+  json_field_required<int[], more_values_str> more_values;
+  static constexpr auto holder = detail::type_holder<decltype(values), decltype(more_values)> {};
+};
+typedef json_unnamed_struct<array_tag> array_configuration;
+
+TEST(json_unit_test, base_array_test_full)
+{
+  const std::vector<std::string> values_cmp { "one", "two", "three" };
+  const std::vector<int> more_values_cmp { 1, 2, 3 };
+  njson json = njson::parse(base_array_full);
+  array_configuration cfg { json };
+  static_assert(cfg.more_values.has_value());
+  ASSERT_TRUE(cfg.values.has_value());
+  ASSERT_EQ(cfg.values, values_cmp);
+  ASSERT_EQ(cfg.more_values, more_values_cmp);
+  const decltype(cfg.values) vals_copy { cfg.values };
+  const decltype(cfg.values) vals_move_copy { std::move(cfg.values) };
+  ASSERT_EQ(vals_copy, vals_move_copy);
+  const decltype(cfg.more_values) more_vals_copy { cfg.more_values };
+  const decltype(cfg.more_values) more_vals_move_copy { std::move(cfg.more_values) };
+  ASSERT_EQ(more_vals_copy, more_vals_move_copy);
+}
+
+TEST(json_unit_test, base_array_test_optional)
+{
+  array_configuration cfg { std::move(njson::parse(base_array_optional)) };
+  // TODO: need implementation
+}
+
+} // namespace base_test
+
 namespace logger_test
 {
 using namespace detail;
@@ -72,11 +187,8 @@ struct root_tag
 };
 typedef json_unnamed_struct<root_tag> root_configuration;
 
-} // namespace logger_test
-
 TEST(json_unit_test, logger_test_copy)
 {
-  using namespace logger_test;
   njson json = njson::parse(full_logger);
   root_configuration cfg { json };
   ASSERT_EQ(cfg.logger->name, "default_logger");
@@ -90,7 +202,6 @@ TEST(json_unit_test, logger_test_copy)
 
 TEST(json_unit_test, logger_test_move)
 {
-  using namespace logger_test;
   njson json = njson::parse(full_logger);
   root_configuration cfg { std::move(json) };
   ASSERT_EQ(cfg.logger->name, "default_logger");
@@ -102,7 +213,9 @@ TEST(json_unit_test, logger_test_move)
   ASSERT_EQ(cfg.logger->async->queue_size, 1024);
 }
 
-namespace array_required_test
+} // namespace logger_test
+
+namespace array_test
 {
 using namespace detail;
 using namespace json;
@@ -165,11 +278,10 @@ typedef json_unnamed_struct<root_tag> root_configuration;
 
 TEST(json_unit_test, array_required_test)
 {
-  using namespace array_required_test;
-  [[maybe_unused]] njson json = njson::parse(data02);
+  njson json = njson::parse(data02);
   // TODO: improve this
   root_configuration cfg { json };
   std::cout << cfg.other->AAA << '\n';
 }
 
-}
+} // namespace array_test
