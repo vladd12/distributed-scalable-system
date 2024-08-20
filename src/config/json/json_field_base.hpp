@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <nlohmann/json.hpp>
 #include <optional>
 #include <string_view>
@@ -120,22 +121,18 @@ public:
   inline explicit json_field_base(const njson &data)                                                   //
   {
     const auto &array = data[field_name];
-    auto data_begin = array.begin();
-    auto data_end = array.end();
-    field.reserve(data_end - data_begin);
-    for (auto iter = data_begin; iter != data_end; ++iter)
-      field.push_back(std::move(clean_type(*iter)));
+    field.reserve(array.size());
+    std::transform(array.begin(), array.end(), std::back_inserter(field), //
+        [](const auto &elem) { return clean_type(elem); });
   }
 
   template <typename Array = T, std::enable_if_t<std::is_array_v<Array> && !is_optional, bool> = true> //
   inline explicit json_field_base(njson &&data)                                                        //
   {
     auto &array = data[field_name];
-    auto data_begin = array.begin();
-    auto data_end = array.end();
-    field.reserve(data_end - data_begin);
-    for (auto iter = data_begin; iter != data_end; ++iter)
-      field.push_back(std::move(clean_type(std::move(*iter))));
+    field.reserve(array.size());
+    std::transform(array.begin(), array.end(), std::back_inserter(field), //
+        [](auto &&elem) { return clean_type(std::move(elem)); });
   }
 
   /* Optional zone */
@@ -160,11 +157,11 @@ public:
     if (data.contains(field_name))
     {
       const auto &array = data[field_name];
-      auto data_begin = array.begin();
-      auto data_end = array.end();
-      field->reserve(data_end - data_begin);
-      for (auto iter = data_begin; iter != data_end; ++iter)
-        field->push_back(std::move(clean_type(*iter)));
+      std::vector<clean_type> result;
+      result.reserve(array.size());
+      std::transform(array.begin(), array.end(), std::back_inserter(result), //
+          [](const auto &elem) { return clean_type(elem); });
+      field.emplace(std::move(result));
     }
   }
 
@@ -174,11 +171,11 @@ public:
     if (data.contains(field_name))
     {
       auto &array = data[field_name];
-      auto data_begin = array.begin();
-      auto data_end = array.end();
-      field->reserve(data_end - data_begin);
-      for (auto iter = data_begin; iter != data_end; ++iter)
-        field->push_back(std::move(clean_type(std::move(*iter))));
+      std::vector<clean_type> result;
+      result.reserve(array.size());
+      std::transform(array.begin(), array.end(), std::back_inserter(result), //
+          [](auto &&elem) { return clean_type(std::move(elem)); });
+      field.emplace(std::move(result));
     }
   }
 

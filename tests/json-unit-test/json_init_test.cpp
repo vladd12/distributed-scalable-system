@@ -112,7 +112,15 @@ TEST(json_unit_test, base_array_test_full)
 TEST(json_unit_test, base_array_test_optional)
 {
   array_configuration cfg { std::move(njson::parse(base_array_optional)) };
-  // TODO: need implementation
+  static_assert(cfg.more_values.has_value());
+  ASSERT_FALSE(cfg.values.has_value());
+  ASSERT_EQ(cfg.more_values, std::vector<int> {});
+  const decltype(cfg.values) vals_copy { cfg.values };
+  const decltype(cfg.values) vals_move_copy { std::move(cfg.values) };
+  ASSERT_EQ(vals_copy, vals_move_copy);
+  const decltype(cfg.more_values) more_vals_copy { cfg.more_values };
+  const decltype(cfg.more_values) more_vals_move_copy { std::move(cfg.more_values) };
+  ASSERT_EQ(more_vals_copy, more_vals_move_copy);
 }
 
 } // namespace base_test
