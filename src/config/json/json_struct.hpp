@@ -5,23 +5,21 @@
 namespace json
 {
 
-template <typename T, auto &name> //
+template <typename T> //
 struct json_struct : public T
 {
 public:
-  static constexpr std::string_view struct_name = std::string_view(name);
-
-  template <typename... Ts>                           //
-  inline explicit json_struct(const njson &data,      //
-      [[maybe_unused]] detail::type_holder<Ts...>)    //
-      : T(std::forward<Ts>(Ts(data[struct_name]))...) //
+  template <typename... Ts>                        //
+  inline explicit json_struct(const njson &data,   //
+      [[maybe_unused]] detail::type_holder<Ts...>) //
+      : T(std::forward<Ts>(Ts(data))...)           //
   {
   }
 
-  template <typename... Ts>                                      //
-  inline explicit json_struct(njson &&data,                      //
-      [[maybe_unused]] detail::type_holder<Ts...>)               //
-      : T(std::forward<Ts>(Ts(std::move(data[struct_name])))...) //
+  template <typename... Ts>                         //
+  inline explicit json_struct(njson &&data,         //
+      [[maybe_unused]] detail::type_holder<Ts...>)  //
+      : T(std::forward<Ts>(Ts(std::move(data)))...) //
   {
   }
 

@@ -1,5 +1,4 @@
 #include <config/json/json_struct.hpp>
-#include <config/json/json_unnamed_struct.hpp>
 #include <gtest/gtest.h>
 
 namespace base_test
@@ -33,7 +32,7 @@ struct root_tag
   static constexpr auto holder = detail::type_holder< //
       decltype(value_int), decltype(value_bool), decltype(value_string)> {};
 };
-typedef json_unnamed_struct<root_tag> root_configuration;
+typedef json_struct<root_tag> root_configuration;
 
 TEST(json_unit_test, base_test_full)
 {
@@ -89,7 +88,7 @@ struct array_tag
   json_field_required<int[], more_values_str> more_values;
   static constexpr auto holder = detail::type_holder<decltype(values), decltype(more_values)> {};
 };
-typedef json_unnamed_struct<array_tag> array_configuration;
+typedef json_struct<array_tag> array_configuration;
 
 TEST(json_unit_test, base_array_test_full)
 {
@@ -165,7 +164,7 @@ struct rotate_tag
   json_field_required<int, max_files_str> max_files;
   static constexpr auto holder = detail::type_holder<decltype(max_size), decltype(max_files)> {};
 };
-typedef json_unnamed_struct<rotate_tag> rotate_configuration;
+typedef json_struct<rotate_tag> rotate_configuration;
 
 struct async_tag
 {
@@ -173,7 +172,7 @@ struct async_tag
   json_field_required<int, queue_size_str> queue_size;
   static constexpr auto holder = detail::type_holder<decltype(thread_pool_size), decltype(queue_size)> {};
 };
-typedef json_unnamed_struct<async_tag> async_configuration;
+typedef json_struct<async_tag> async_configuration;
 
 struct logger_tag
 {
@@ -186,14 +185,14 @@ struct logger_tag
       decltype(name), decltype(filepath), decltype(pattern), decltype(rotate), decltype(async) //
       > {};                                                                                    //
 };
-typedef json_unnamed_struct<logger_tag> logger_configuration;
+typedef json_struct<logger_tag> logger_configuration;
 
 struct root_tag
 {
   json_field_required<logger_configuration, logger_str> logger;
   static constexpr auto holder = detail::type_holder<decltype(logger)> {};
 };
-typedef json_unnamed_struct<root_tag> root_configuration;
+typedef json_struct<root_tag> root_configuration;
 
 TEST(json_unit_test, logger_test_copy)
 {
@@ -261,7 +260,7 @@ struct key_value_tag
   json_field_optional<int[], optionality_str> optionality;
   static constexpr auto holder = detail::type_holder<decltype(key), decltype(value), decltype(optionality)> {};
 };
-typedef json_unnamed_struct<key_value_tag> key_value_configuration;
+typedef json_struct<key_value_tag> key_value_configuration;
 
 struct other_tag
 {
@@ -269,7 +268,7 @@ struct other_tag
   json_field_required<int, BBB_str> BBB;
   static constexpr auto holder = detail::type_holder<decltype(AAA), decltype(BBB)> {};
 };
-typedef json_unnamed_struct<other_tag> other_configuration;
+typedef json_struct<other_tag> other_configuration;
 
 struct root_tag
 {
@@ -281,7 +280,7 @@ struct root_tag
   static constexpr auto holder = detail::type_holder< //
       decltype(name), decltype(value), decltype(flag), decltype(options), decltype(other)> {};
 };
-typedef json_unnamed_struct<root_tag> root_configuration;
+typedef json_struct<root_tag> root_configuration;
 
 TEST(json_unit_test, array_complex_test)
 {
