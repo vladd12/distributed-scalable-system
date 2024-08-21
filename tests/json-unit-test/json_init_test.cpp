@@ -228,13 +228,13 @@ namespace array_test
 using namespace detail;
 using namespace json;
 
-constexpr static auto data02 = R"(
+constexpr static auto array_complex_json = R"(
 {
   "name": "default_logger",
   "value": "some_value",
   "flag": true,
   "options": [
-    { "key": "AAA", "value": "111" },
+    { "key": "AAA", "value": "111", "optionality": [1, 2, 3] },
     { "key": "BBB", "value": "222" }
   ],
   "other": {
@@ -247,6 +247,7 @@ constexpr static auto data02 = R"(
 constexpr static auto name_str = "name";
 constexpr static auto key_str = "key";
 constexpr static auto value_str = "value";
+constexpr static auto optionality_str = "optionality";
 constexpr static auto flag_str = "flag";
 constexpr static auto options_str = "options";
 constexpr static auto other_str = "other";
@@ -257,7 +258,8 @@ struct key_value_tag
 {
   json_field_required<std::string, key_str> key;
   json_field_required<std::string, value_str> value;
-  static constexpr auto holder = detail::type_holder<decltype(key), decltype(value)> {};
+  json_field_optional<int[], optionality_str> optionality;
+  static constexpr auto holder = detail::type_holder<decltype(key), decltype(value), decltype(optionality)> {};
 };
 typedef json_unnamed_struct<key_value_tag> key_value_configuration;
 
@@ -281,15 +283,32 @@ struct root_tag
 };
 typedef json_unnamed_struct<root_tag> root_configuration;
 
-// TODO: delete this later :DDD
-#include <iostream>
-
-TEST(json_unit_test, array_required_test)
+TEST(json_unit_test, array_complex_test)
 {
-  njson json = njson::parse(data02);
-  // TODO: improve this
+  njson json = njson::parse(array_complex_json);
   root_configuration cfg { json };
-  std::cout << cfg.other->AAA << '\n';
+  static_assert(cfg.name.has_value());
+  static_assert(cfg.value.has_value());
+  static_assert(cfg.options.has_value());
+  ASSERT_EQ(cfg.name, "default_logger");
+  ASSERT_EQ(cfg.value, "some_value");
+  ASSERT_TRUE(cfg.flag.has_value());
+  ASSERT_EQ(cfg.flag, true);
+  ASSERT_TRUE(cfg.other.has_value());
+  ASSERT_EQ(cfg.other->AAA, 111);
+  ASSERT_EQ(cfg.other->BBB, 222);
+  ASSERT_EQ(cfg.options.size(), 2);
+  const auto &elem0 = cfg.options[0];
+  ASSERT_EQ(elem0.key, "AAA");
+  ASSERT_EQ(elem0.value, "111");
+  ASSERT_TRUE(elem0.optionality.has_value());
+  ASSERT_EQ(elem0.optionality.size(), 3);
+  ASSERT_EQ(elem0.optionality, (std::vector<int> { 1, 2, 3 }));
+  auto &elem1 = cfg.options[1];
+  ASSERT_EQ(elem1.key, "BBB");
+  ASSERT_EQ(elem1.value, "222");
+  ASSERT_FALSE(elem1.optionality.has_value());
+  ASSERT_EQ(elem1.optionality.size(), 0);
 }
 
 } // namespace array_test

@@ -10,6 +10,7 @@
 namespace detail
 {
 
+/// \brief Just little helper, that hold some types.
 template <typename... Ts> //
 struct type_holder
 {
@@ -45,7 +46,7 @@ public:
       std::conditional_t<is_array, std::optional<std::vector<clean_type>>, std::optional<clean_type>>, //
       std::conditional_t<is_array, std::vector<clean_type>, clean_type>>;
 
-  // external_type is type for external acces to stored field data
+  /// \brief external_type is type for external acces to stored field data
   using external_type = std::conditional_t<is_array, std::vector<clean_type>, clean_type>;
 
 protected:
@@ -107,16 +108,19 @@ public:
 
   /* Required zone */
 
+  /// \brief Copying ctor for not optional and not array stored type.
   template <typename Element = T, std::enable_if_t<!std::is_array_v<Element> && !is_optional, bool> = true> //
   inline explicit json_field_base(const njson &data) : field(data[field_name])                              //
   {
   }
 
+  /// \brief Moving ctor for not optional and not array stored type.
   template <typename Element = T, std::enable_if_t<!std::is_array_v<Element> && !is_optional, bool> = true> //
   inline explicit json_field_base(njson &&data) : field(data[field_name])                                   //
   {
   }
 
+  /// \brief Copying ctor for stored not optional array type.
   template <typename Array = T, std::enable_if_t<std::is_array_v<Array> && !is_optional, bool> = true> //
   inline explicit json_field_base(const njson &data)                                                   //
   {
@@ -126,6 +130,7 @@ public:
         [](const auto &elem) { return clean_type(elem); });
   }
 
+  /// \brief Moving ctor for stored not optional array type.
   template <typename Array = T, std::enable_if_t<std::is_array_v<Array> && !is_optional, bool> = true> //
   inline explicit json_field_base(njson &&data)                                                        //
   {
@@ -137,6 +142,7 @@ public:
 
   /* Optional zone */
 
+  /// \brief Copying ctor for stored not array optional type.
   template <typename Element = T, std::enable_if_t<!std::is_array_v<Element> && is_optional, bool> = true> //
   inline explicit json_field_base(const njson &data)                                                       //
   {
@@ -144,6 +150,7 @@ public:
       field.emplace(data[field_name]);
   }
 
+  /// \brief Moving ctor for stored not array optional type.
   template <typename Element = T, std::enable_if_t<!std::is_array_v<Element> && is_optional, bool> = true> //
   inline explicit json_field_base(njson &&data)                                                            //
   {
@@ -151,6 +158,7 @@ public:
       field.emplace(std::move(data[field_name]));
   }
 
+  /// \brief Copying ctor for stored optional array type.
   template <typename Array = T, std::enable_if_t<std::is_array_v<Array> && is_optional, bool> = true> //
   inline explicit json_field_base(const njson &data)                                                  //
   {
@@ -165,6 +173,7 @@ public:
     }
   }
 
+  /// \brief Moving ctor for stored optional array type.
   template <typename Array = T, std::enable_if_t<std::is_array_v<Array> && is_optional, bool> = true> //
   inline explicit json_field_base(njson &&data)                                                       //
   {
@@ -249,8 +258,9 @@ public:
       return true;
   }
 
+  /// \brief Useful operator-> for cases when we store a struct type or a class type.
   template <typename R = T, std::enable_if_t<std::is_class_v<R>, bool> = true> //
-  constexpr R *operator->() noexcept
+  [[nodiscard]] constexpr inline R *operator->() noexcept
   {
     if constexpr (is_optional)
       return field.operator->();
@@ -258,13 +268,51 @@ public:
       return &field;
   }
 
+  /// \brief Useful operator-> for cases when we store a struct type or a class type. Const overload.
   template <typename R = T, std::enable_if_t<std::is_class_v<R>, bool> = true> //
-  constexpr const R *operator->() const noexcept
+  [[nodiscard]] constexpr inline const R *operator->() const noexcept
   {
     if constexpr (is_optional)
       return field.operator->();
     else
       return &field;
+  }
+
+  /// \brief Returns size of stored vector for cases when stored type is array.
+  template <typename Size = std::enable_if_t<is_array, std::size_t>> //
+  [[nodiscard]] inline Size size() const noexcept
+  {
+    if constexpr (is_optional)
+    {
+      if (field.has_value())
+        return field.value().size();
+      else
+        return 0;
+    }
+    else
+      return field.size();
+  }
+
+  /// \brief Returns reference to to the element at specified location.
+  /// \details Can throw std::bad_optional_access and std::out_of_range exceptions.
+  template <typename R = std::enable_if_t<is_array, clean_type>> //
+  [[nodiscard]] inline R &operator[](const std::size_t pos)
+  {
+    if constexpr (is_optional)
+      return field.value().at(pos);
+    else
+      return field.at(pos);
+  }
+
+  /// \brief Returns const reference to to the element at specified location.
+  /// \details Can throw std::bad_optional_access and std::out_of_range exceptions.
+  template <typename R = std::enable_if_t<is_array, clean_type>> //
+  [[nodiscard]] inline const R &operator[](const std::size_t pos) const
+  {
+    if constexpr (is_optional)
+      return field.value().at(pos);
+    else
+      return field.at(pos);
   }
 };
 
