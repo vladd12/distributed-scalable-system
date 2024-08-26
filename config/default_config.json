@@ -3,6 +3,8 @@
         "name": "default_logger",
         "filepath": "logs/log.txt",
         "pattern": "[%H:%M:%S %z] [%n] [%^---%L---%$] [thread %t] %v",
+        "log-level": "debug",
+        "console-output": true,
         "rotate": {
             "max-size": 10,
             "max-files" : 10

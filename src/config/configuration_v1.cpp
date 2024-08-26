@@ -20,6 +20,10 @@ logger_configuration::logger_configuration(const nlohmann::json &json) //
 {
   if (json.contains("pattern"))
     pattern.emplace(std::move(std::string(json["pattern"])));
+  if (json.contains("log-level"))
+    log_level.emplace(std::move(std::string(json["log-level"])));
+  if (json.contains("console-output"))
+    console_output.emplace(bool(json["console-output"]));
   if (json.contains("rotate"))
     rotate.emplace(std::move(rotate_configuration(json["rotate"])));
   if (json.contains("async"))

@@ -1,11 +1,7 @@
 #include <config/configuration_v1.hpp>
 #include <core/cmd_line_args.hpp>
+#include <core/logger.hpp>
 #include <iostream>
-
-void test(config::configuration_ptr &cfg)
-{
-  std::cout << cfg->fs.host << ':' << cfg->fs.port << '\n';
-}
 
 int main(int argc, char *argv[])
 {
@@ -18,7 +14,7 @@ int main(int argc, char *argv[])
       return 2;
     }
     auto cfg { config::parse_configuration(arguments.get_config_filepath()) };
-    test(cfg);
+    core::init_logger(cfg->logger);
   } catch (std::exception &e)
   {
     std::cout << "Runtime error: " << e.what() << '\n';

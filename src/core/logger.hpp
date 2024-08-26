@@ -1,14 +1,15 @@
 #pragma once
 
-#include <spdlog/spdlog.h>
+#include <config/configuration_v1.hpp>
+#include <spdlog/logger.h>
 
-namespace utils
+namespace core
 {
 
-class logger
-{
-public:
-  logger();
-};
+typedef ::config::logger_configuration logger_config;
 
-} // namespace utils
+void init_logger(const logger_config &cfg);
+
+spdlog::logger &get_logger();
+
+} // namespace core

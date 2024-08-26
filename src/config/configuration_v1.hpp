@@ -32,6 +32,8 @@ struct logger_configuration
   std::string name;
   std::string filepath;
   std::optional<std::string> pattern;
+  std::optional<std::string> log_level;
+  std::optional<bool> console_output;
   std::optional<rotate_configuration> rotate;
   std::optional<async_configuration> async;
 
