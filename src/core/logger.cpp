@@ -13,12 +13,10 @@ typedef std::shared_ptr<spdlog::logger> logger_ptr;
 
 namespace
 {
-  struct local_storage
-  {
-    static std::string logger_name;
-  };
-  std::string local_storage::logger_name {};
+  constexpr inline std::uint64_t MiB = 1024 * 1024;
+  static std::string logger_name;
 
+  /// \brief Setup all sinks with same params.
   void setup_sink(const logger_config &cfg, spdlog::sink_ptr &sink)
   {
     if (cfg.pattern.has_value())
@@ -33,7 +31,7 @@ void init_logger(const logger_config &cfg)
   // Reserve space for logging sinks and save logger_name
   std::vector<spdlog::sink_ptr> sinks;
   sinks.reserve(4);
-  local_storage::logger_name = cfg.name;
+  logger_name = cfg.name;
 
   // init thread pool if using async logging
   if (cfg.async.has_value())
@@ -42,7 +40,7 @@ void init_logger(const logger_config &cfg)
   // create file sink
   if (cfg.rotate.has_value())
     sinks.push_back(std::move(std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
-        cfg.filepath, cfg.rotate->max_size, cfg.rotate->max_files)));
+        cfg.filepath, cfg.rotate->max_size * MiB, cfg.rotate->max_files)));
   else
     sinks.push_back(std::move(std::make_shared<spdlog::sinks::basic_file_sink_mt>(cfg.filepath)));
 
@@ -56,11 +54,11 @@ void init_logger(const logger_config &cfg)
 
   // create async logger if using async logging
   if (cfg.async.has_value())
-    logger = std::make_shared<spdlog::async_logger>(local_storage::logger_name, //
+    logger = std::make_shared<spdlog::async_logger>(logger_name, //
         sinks.begin(), sinks.end(), spdlog::thread_pool(), spdlog::async_overflow_policy::block);
   // create logger if not using async logging
   else
-    logger = std::make_shared<spdlog::logger>(local_storage::logger_name, sinks.begin(), sinks.end());
+    logger = std::make_shared<spdlog::logger>(logger_name, sinks.begin(), sinks.end());
 
   // registering logger
   spdlog::register_logger(logger);
@@ -68,7 +66,7 @@ void init_logger(const logger_config &cfg)
 
 spdlog::logger &get_logger()
 {
-  return *spdlog::get(local_storage::logger_name);
+  return *spdlog::get(logger_name);
 }
 
 } // namespace core

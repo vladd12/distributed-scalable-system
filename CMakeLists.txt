@@ -30,6 +30,7 @@ set(DCS_TESTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tests")
 
 set(DCS_DAEMON_HEADERS
   "${DCS_SOURCES_DIR}/core/cmd_line_args.hpp"
+  "${DCS_SOURCES_DIR}/core/errors.hpp"
   "${DCS_SOURCES_DIR}/core/logger.hpp"
 
   "${DCS_SOURCES_DIR}/config/configuration_v1.hpp"

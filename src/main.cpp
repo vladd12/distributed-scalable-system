@@ -1,5 +1,6 @@
 #include <config/configuration_v1.hpp>
 #include <core/cmd_line_args.hpp>
+#include <core/errors.hpp>
 #include <core/logger.hpp>
 #include <iostream>
 
@@ -15,9 +16,18 @@ int main(int argc, char *argv[])
     }
     auto cfg { config::parse_configuration(arguments.get_config_filepath()) };
     core::init_logger(cfg->logger);
-  } catch (std::exception &e)
+    core::get_logger().info("Logger init is successfully");
+  } catch (const spdlog::spdlog_ex &ex)
   {
-    std::cout << "Runtime error: " << e.what() << '\n';
+    std::cout << "Log init failed: " << ex.what() << std::endl;
+    return 2;
+  } catch (const core::not_implemented_error &ex)
+  {
+    std::cout << "Not implemented feature: " << ex.what() << std::endl;
+    return 3;
+  } catch (std::exception &ex)
+  {
+    std::cout << "Runtime error: " << ex.what() << '\n';
     return 1;
   } catch (...)
   {
