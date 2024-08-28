@@ -2,6 +2,7 @@
 #include <core/cmd_line_args.hpp>
 #include <core/errors.hpp>
 #include <core/logger.hpp>
+#include <fs/file_system_provider.hpp>
 #include <iostream>
 
 int main(int argc, char *argv[])
@@ -17,6 +18,9 @@ int main(int argc, char *argv[])
     auto cfg { config::parse_configuration(arguments.get_config_filepath()) };
     core::init_logger(cfg->logger);
     core::get_logger().info("Logger init is successfully");
+    fs::file_system_provider fs_provider {};
+    auto fs = fs_provider.get(cfg->fs.host, cfg->fs.port);
+    fs->close();
   } catch (const spdlog::spdlog_ex &ex)
   {
     std::cout << "Log init failed: " << ex.what() << std::endl;
