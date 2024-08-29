@@ -32,12 +32,14 @@ set(DCS_DAEMON_HEADERS
   "${DCS_SOURCES_DIR}/core/cmd_line_args.hpp"
   "${DCS_SOURCES_DIR}/core/errors.hpp"
   "${DCS_SOURCES_DIR}/core/logger.hpp"
+  "${DCS_SOURCES_DIR}/core/sys_api.hpp"
 
   "${DCS_SOURCES_DIR}/config/configuration_v1.hpp"
 
   "${DCS_SOURCES_DIR}/config/json/json_field_base.hpp"
   "${DCS_SOURCES_DIR}/config/json/json_struct.hpp"
 
+  "${DCS_SOURCES_DIR}/fs/file.hpp"
   "${DCS_SOURCES_DIR}/fs/file_system.hpp"
   "${DCS_SOURCES_DIR}/fs/local_file_system.hpp"
   "${DCS_SOURCES_DIR}/fs/distributed_file_system.hpp"
