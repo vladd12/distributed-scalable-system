@@ -1,5 +1,8 @@
 #include "fs/local_file_system.hpp"
 
+#include <boost/filesystem.hpp>
+#include <boost/iostreams/device/mapped_file.hpp>
+#include <boost/iostreams/stream.hpp>
 #include <core/errors.hpp>
 
 namespace fs
@@ -40,6 +43,73 @@ bool local_file_system::is_directory(file &f)
 std::uint64_t local_file_system::size(file &f)
 {
   throw err;
+}
+
+void local_file_system::logging_error()
+{
+  [[maybe_unused]] const auto msg = m_error.message();
+  // TODO: logging error message and error category
+  m_error.clear();
+}
+
+std::ostream local_file_system::open(const std::string_view &path)
+{
+  boost::iostreams::mapped_file_params params { path };
+  params.length = size(path);
+  params.flags = boost::iostreams::mapped_file::mapmode::readonly;
+  boost::iostreams::stream<boost::iostreams::mapped_file_sink> out { params };
+  return std::ostream { out.rdbuf() };
+}
+
+void local_file_system::create(const std::string_view &path)
+{
+  ;
+}
+
+bool local_file_system::rename(const std::string_view &old_path, const std::string_view &new_path)
+{
+  boost::filesystem::rename(old_path, new_path, m_error);
+  if (m_error)
+  {
+    logging_error();
+    return false;
+  }
+  else
+    return true;
+}
+
+bool local_file_system::remove(const std::string_view &path)
+{
+  auto result = boost::filesystem::remove(path, m_error);
+  if (m_error)
+  {
+    logging_error();
+    return false;
+  }
+  else
+    return result;
+}
+
+bool local_file_system::is_exists(const std::string_view &path) noexcept
+{
+  return boost::filesystem::exists(path);
+}
+
+bool local_file_system::is_directory(const std::string_view &path) noexcept
+{
+  return boost::filesystem::is_directory(path);
+}
+
+std::uint64_t local_file_system::size(const std::string_view &path) noexcept
+{
+  auto size = boost::filesystem::file_size(path, m_error);
+  if (m_error)
+  {
+    logging_error();
+    return 0;
+  }
+  else
+    return size;
 }
 
 std::vector<file> local_file_system::list_files(file_filter &filter)
