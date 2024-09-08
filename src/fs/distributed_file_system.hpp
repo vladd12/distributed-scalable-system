@@ -20,7 +20,7 @@ public:
 
   std::vector<std::string> list_files(const std::string_view &path) override;
 
-  void mkdir(file &f) override;
+  bool mkdir(const std::string_view &path) noexcept override;
 
   void lock(file &f, bool is_shared) override;
   void release(file &f) override;

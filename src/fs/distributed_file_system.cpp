@@ -50,9 +50,10 @@ std::vector<std::string> distributed_file_system::list_files(const std::string_v
   throw err;
 }
 
-void distributed_file_system::mkdir(file &f)
+bool distributed_file_system::mkdir(const std::string_view &path) noexcept
 {
-  throw err;
+  /// TODO: implement this
+  return false;
 }
 
 void distributed_file_system::lock(file &f, bool is_shared)

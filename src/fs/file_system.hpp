@@ -66,7 +66,7 @@ public:
     return list_files<file_filter>(path, std::move(filter));
   }
 
-  virtual void mkdir(file &f) = 0;
+  virtual bool mkdir(const std::string_view &path) noexcept = 0;
 
   virtual void lock(file &f, bool is_shared) = 0;
   virtual void release(file &f) = 0;

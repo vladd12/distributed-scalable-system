@@ -110,9 +110,16 @@ std::vector<std::string> local_file_system::list_files(const std::string_view &p
     return { std::string(path) };
 }
 
-void local_file_system::mkdir(file &f)
+bool local_file_system::mkdir(const std::string_view &path) noexcept
 {
-  throw err;
+  auto result = boost::filesystem::create_directory(path, m_error);
+  if (m_error)
+  {
+    logging_error();
+    return false;
+  }
+  else
+    return result;
 }
 
 void local_file_system::lock(file &f, bool is_shared)
