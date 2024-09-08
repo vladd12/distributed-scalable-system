@@ -40,7 +40,6 @@ set(DCS_DAEMON_HEADERS
   "${DCS_SOURCES_DIR}/config/json/json_field_base.hpp"
   "${DCS_SOURCES_DIR}/config/json/json_struct.hpp"
 
-  "${DCS_SOURCES_DIR}/fs/file.hpp"
   "${DCS_SOURCES_DIR}/fs/file_system.hpp"
   "${DCS_SOURCES_DIR}/fs/local_file_system.hpp"
   "${DCS_SOURCES_DIR}/fs/distributed_file_system.hpp"
