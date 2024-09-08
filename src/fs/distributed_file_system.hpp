@@ -18,7 +18,7 @@ public:
   bool is_directory(const std::string_view &path) noexcept override;
   std::uint64_t size(const std::string_view &path) noexcept override;
 
-  std::vector<file> list_files(file_filter &filter) override;
+  std::vector<std::string> list_files(const std::string_view &path) override;
 
   void mkdir(file &f) override;
 

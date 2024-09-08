@@ -13,6 +13,8 @@ private:
 
   void logging_error();
 
+  std::vector<std::string> get_directory_files(const std::string_view &path);
+
 public:
   std::istream open(const std::string_view &path) override;
   std::ostream create(const std::string_view &path) override;
@@ -24,7 +26,7 @@ public:
   bool is_directory(const std::string_view &path) noexcept override;
   std::uint64_t size(const std::string_view &path) noexcept override;
 
-  std::vector<file> list_files(file_filter &filter) override;
+  std::vector<std::string> list_files(const std::string_view &path) override;
 
   void mkdir(file &f) override;
 

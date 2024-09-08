@@ -18,13 +18,35 @@ void local_file_system::logging_error()
   m_error.clear();
 }
 
+std::vector<std::string> local_file_system::get_directory_files(const std::string_view &path)
+{
+  std::vector<std::string> directory_files;
+  boost::filesystem::directory_iterator dir_iter { path };
+  for (auto &&entry : dir_iter)
+  {
+    const auto &entry_path = entry.path();
+    if (boost::filesystem::is_directory(entry_path))
+    {
+      auto subdirectory_files = get_directory_files(entry_path.string());
+      directory_files.insert(directory_files.end(),            //
+          std::make_move_iterator(subdirectory_files.begin()), //
+          std::make_move_iterator(subdirectory_files.end()));  //
+    }
+    else
+      directory_files.push_back(std::move(entry_path.string()));
+  }
+  return directory_files;
+}
+
 std::istream local_file_system::open(const std::string_view &path)
 {
   boost::iostreams::mapped_file_params params { path };
   params.length = size(path);
   params.flags = boost::iostreams::mapped_file::mapmode::readonly;
-  boost::iostreams::stream<boost::iostreams::mapped_file_sink> out { params };
-  return std::istream { out.rdbuf() };
+  //  boost::iostreams::stream<boost::iostreams::mapped_file_sink> out { params };
+  //  return std::istream { out.rdbuf() };
+  boost::iostreams::stream_buffer<boost::iostreams::mapped_file_sink> buf { params };
+  return std::istream { &buf };
 }
 
 std::ostream local_file_system::create(const std::string_view &path)
@@ -79,9 +101,13 @@ std::uint64_t local_file_system::size(const std::string_view &path) noexcept
     return size;
 }
 
-std::vector<file> local_file_system::list_files(file_filter &filter)
+std::vector<std::string> local_file_system::list_files(const std::string_view &path)
 {
-  throw err;
+  boost::filesystem::path well_path { path };
+  if (is_directory(path))
+    return get_directory_files(path);
+  else
+    return { std::string(path) };
 }
 
 void local_file_system::mkdir(file &f)

@@ -45,7 +45,7 @@ std::uint64_t distributed_file_system::size(const std::string_view &path) noexce
   return 0;
 }
 
-std::vector<file> distributed_file_system::list_files(file_filter &filter)
+std::vector<std::string> distributed_file_system::list_files(const std::string_view &path)
 {
   throw err;
 }

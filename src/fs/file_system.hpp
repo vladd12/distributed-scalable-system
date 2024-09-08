@@ -18,6 +18,8 @@ struct file
 
 struct file_filter
 {
+public:
+  virtual bool operator()(const std::string_view &path) const = 0;
 };
 
 class file_system : private boost::noncopyable, public std::enable_shared_from_this<file_system>
@@ -44,7 +46,25 @@ public:
   virtual bool is_directory(const std::string_view &path) noexcept = 0;
   virtual std::uint64_t size(const std::string_view &path) noexcept = 0;
 
-  virtual std::vector<file> list_files(file_filter &filter) = 0;
+  virtual std::vector<std::string> list_files(const std::string_view &path) = 0;
+
+  template <typename F> //
+  inline std::vector<std::string> list_files(const std::string_view &path, F &&filter)
+  {
+    auto all_files = list_files(path);
+    std::vector<std::string> filtered_files;
+    for (auto &&file : all_files)
+    {
+      if (filter(file))
+        filtered_files.push_back(file);
+    }
+    return filtered_files;
+  }
+
+  std::vector<std::string> list_files(const std::string_view &path, file_filter &filter)
+  {
+    return list_files<file_filter>(path, std::move(filter));
+  }
 
   virtual void mkdir(file &f) = 0;
 

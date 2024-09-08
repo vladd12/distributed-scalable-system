@@ -44,4 +44,16 @@ public:
   }
 };
 
+class file_not_found final : public io_error
+{
+public:
+  inline explicit file_not_found(const std::string &msg) : io_error(msg)
+  {
+  }
+
+  inline explicit file_not_found(const char *msg) : io_error(msg)
+  {
+  }
+};
+
 } // namespace core
