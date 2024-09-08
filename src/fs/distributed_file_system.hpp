@@ -8,15 +8,16 @@ namespace fs
 class distributed_file_system final : public file_system
 {
 public:
-  file open() override;
-  file create() override;
-  bool rename(file &f, const std::string_view &new_name) override;
-  bool remove(file &f) override;
+  std::istream open(const std::string_view &path) override;
+  std::ostream create(const std::string_view &path) override;
 
-  bool is_exists(file &f) override;
-  bool is_directory(file &f) override;
+  bool rename(const std::string_view &old_path, const std::string_view &new_path) override;
+  bool remove(const std::string_view &path) override;
 
-  std::uint64_t size(file &f) override;
+  bool is_exists(const std::string_view &path) noexcept override;
+  bool is_directory(const std::string_view &path) noexcept override;
+  std::uint64_t size(const std::string_view &path) noexcept override;
+
   std::vector<file> list_files(file_filter &filter) override;
 
   void mkdir(file &f) override;

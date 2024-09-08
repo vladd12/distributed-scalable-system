@@ -7,39 +7,42 @@ namespace fs
 
 static const core::not_implemented_error err("func is not implemented yet");
 
-file distributed_file_system::open()
+std::istream distributed_file_system::open(const std::string_view &path)
 {
   throw err;
 }
 
-file distributed_file_system::create()
+std::ostream distributed_file_system::create(const std::string_view &path)
 {
   throw err;
 }
 
-bool distributed_file_system::rename(file &f, const std::string_view &new_name)
+bool distributed_file_system::rename(const std::string_view &old_path, const std::string_view &new_path)
 {
   throw err;
 }
 
-bool distributed_file_system::remove(file &f)
+bool distributed_file_system::remove(const std::string_view &path)
 {
   throw err;
 }
 
-bool distributed_file_system::is_exists(file &f)
+bool distributed_file_system::is_exists(const std::string_view &path) noexcept
 {
-  throw err;
+  /// TODO: implement this
+  return false;
 }
 
-bool distributed_file_system::is_directory(file &f)
+bool distributed_file_system::is_directory(const std::string_view &path) noexcept
 {
-  throw err;
+  /// TODO: implement this
+  return false;
 }
 
-std::uint64_t distributed_file_system::size(file &f)
+std::uint64_t distributed_file_system::size(const std::string_view &path) noexcept
 {
-  throw err;
+  /// TODO: implement this
+  return 0;
 }
 
 std::vector<file> distributed_file_system::list_files(file_filter &filter)

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <boost/noncopyable.hpp>
+#include <iostream>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -33,15 +34,16 @@ public:
     return shared_from_this();
   }
 
-  virtual file open() = 0;
-  virtual file create() = 0;
-  virtual bool rename(file &f, const std::string_view &new_name) = 0;
-  virtual bool remove(file &f) = 0;
+  virtual std::istream open(const std::string_view &path) = 0;
+  virtual std::ostream create(const std::string_view &path) = 0;
 
-  virtual bool is_exists(file &f) = 0;
-  virtual bool is_directory(file &f) = 0;
+  virtual bool rename(const std::string_view &old_path, const std::string_view &new_path) = 0;
+  virtual bool remove(const std::string_view &path) = 0;
 
-  virtual std::uint64_t size(file &f) = 0;
+  virtual bool is_exists(const std::string_view &path) noexcept = 0;
+  virtual bool is_directory(const std::string_view &path) noexcept = 0;
+  virtual std::uint64_t size(const std::string_view &path) noexcept = 0;
+
   virtual std::vector<file> list_files(file_filter &filter) = 0;
 
   virtual void mkdir(file &f) = 0;
