@@ -37,6 +37,7 @@ set(DCS_DAEMON_HEADERS
 
   "${DCS_SOURCES_DIR}/config/configuration_v1.hpp"
 
+  "${DCS_SOURCES_DIR}/config/json/fixed_string.hpp"
   "${DCS_SOURCES_DIR}/config/json/json_field_base.hpp"
   "${DCS_SOURCES_DIR}/config/json/json_struct.hpp"
 

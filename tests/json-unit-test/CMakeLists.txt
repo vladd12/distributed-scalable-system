@@ -1,6 +1,7 @@
 # Collecting tests sources
 set(JSON_UNIT_TEST_SRC
-  ${CMAKE_CURRENT_SOURCE_DIR}/json_init_test.cpp
+  "${CMAKE_CURRENT_SOURCE_DIR}/json_init_test.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/fixed_str_test.cpp"
 )
 
 # Compiling tests as executable file
