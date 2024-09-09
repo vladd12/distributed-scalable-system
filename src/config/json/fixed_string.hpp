@@ -1,7 +1,8 @@
+#pragma once
+
 #include <algorithm>
 #include <cassert>
 #include <concepts>
-#include <string>
 #include <string_view>
 #include <type_traits>
 
@@ -153,7 +154,7 @@ public:
 
   constexpr std::basic_string_view<charT, traits> view() const noexcept
   {
-    return std::basic_string_view<charT, traits>(begin(), N);
+    return std::basic_string_view<charT, traits>(c_str(), N);
   }
 
   constexpr operator std::basic_string_view<charT, traits>() const noexcept
@@ -200,12 +201,41 @@ public:
 template <one_of<char, char8_t, char16_t, char32_t, wchar_t> CharT, std::convertible_to<CharT>... Rest>
 basic_fixed_string(CharT, Rest...) -> basic_fixed_string<CharT, 1 + sizeof...(Rest)>;
 
-template <typename charT, size_t N> basic_fixed_string(const charT (&str)[N]) -> basic_fixed_string<charT, N - 1>;
+template <typename charT, std::size_t N> basic_fixed_string(const charT (&str)[N]) -> basic_fixed_string<charT, N - 1>;
 
-template <std::size_t N> using fixed_string = basic_fixed_string<char, N>;
-template <std::size_t N> using wfixed_string = basic_fixed_string<wchar_t, N>;
-template <std::size_t N> using u8fixed_string = basic_fixed_string<char8_t, N>;
-template <std::size_t N> using u16fixed_string = basic_fixed_string<char16_t, N>;
-template <std::size_t N> using u32fixed_string = basic_fixed_string<char32_t, N>;
+template <std::size_t N> //
+class fixed_string : public basic_fixed_string<char, N>
+{
+  using basic_fixed_string<char, N>::basic_fixed_string;
+};
+template <std::size_t N> fixed_string(const char (&str)[N]) -> fixed_string<N - 1>;
+
+template <std::size_t N> //
+class wfixed_string : public basic_fixed_string<wchar_t, N>
+{
+  using basic_fixed_string<wchar_t, N>::basic_fixed_string;
+};
+template <std::size_t N> wfixed_string(const wchar_t (&str)[N]) -> wfixed_string<N - 1>;
+
+template <std::size_t N> //
+class u8fixed_string : public basic_fixed_string<char8_t, N>
+{
+  using basic_fixed_string<char8_t, N>::basic_fixed_string;
+};
+template <std::size_t N> u8fixed_string(const char8_t (&str)[N]) -> u8fixed_string<N - 1>;
+
+template <std::size_t N> //
+class u16fixed_string : public basic_fixed_string<char16_t, N>
+{
+  using basic_fixed_string<char16_t, N>::basic_fixed_string;
+};
+template <std::size_t N> u16fixed_string(const char16_t (&str)[N]) -> u16fixed_string<N - 1>;
+
+template <std::size_t N> //
+class u32fixed_string : public basic_fixed_string<char32_t, N>
+{
+  using basic_fixed_string<char32_t, N>::basic_fixed_string;
+};
+template <std::size_t N> u32fixed_string(const char32_t (&str)[N]) -> u32fixed_string<N - 1>;
 
 }
