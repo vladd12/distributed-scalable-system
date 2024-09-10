@@ -125,12 +125,12 @@ public:
 
   constexpr const_reference front() const
   {
-    return data_[0];
+    return *cbegin();
   }
 
   constexpr const_reference back() const
   {
-    return data_[N - 1];
+    return *(cend() - 1);
   }
 
   // [fixed.string.modifiers], modifiers
