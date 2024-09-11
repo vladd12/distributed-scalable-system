@@ -1,10 +1,8 @@
 #pragma once
 
-#include <algorithm>
+#include <config/json/fixed_string.hpp>
 #include <nlohmann/json.hpp>
 #include <optional>
-#include <string_view>
-#include <type_traits>
 #include <vector>
 
 namespace detail
@@ -22,7 +20,7 @@ namespace json
 {
 using njson = nlohmann::json;
 
-template <typename T, auto &name, bool required> //
+template <typename T, utils::fixed_string name, bool required> //
 class json_field_base
 {
 public:
@@ -31,7 +29,7 @@ public:
   static_assert(!std::is_reference_v<T>, "Must be not a reference type");
   static_assert(!std::is_rvalue_reference_v<T>, "Must be not a rvalue reference type");
 
-  static constexpr std::string_view field_name = std::string_view(name); ///< json field name
+  static constexpr std::string_view field_name = name.view(); ///< json field name
   using clean_type = std::remove_cvref_t<std::remove_extent_t<T>>;
 
   static constexpr auto is_optional = !required;
@@ -316,10 +314,10 @@ public:
   }
 };
 
-template <typename T, auto &name> //
+template <typename T, utils::fixed_string name> //
 using json_field_required = json_field_base<T, name, true>;
 
-template <typename T, auto &name> //
+template <typename T, utils::fixed_string name> //
 using json_field_optional = json_field_base<T, name, false>;
 
 } // namespace json

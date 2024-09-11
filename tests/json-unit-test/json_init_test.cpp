@@ -20,15 +20,11 @@ constexpr static auto base_optional = R"(
 }
 )";
 
-constexpr static auto value_int_str = "value-int";
-constexpr static auto value_bool_str = "value-bool";
-constexpr static auto value_string_str = "value-string";
-
 struct root_tag
 {
-  json_field_required<int, value_int_str> value_int;
-  json_field_optional<bool, value_bool_str> value_bool;
-  json_field_optional<std::string, value_string_str> value_string;
+  json_field_required<int, "value-int"> value_int;
+  json_field_optional<bool, "value-bool"> value_bool;
+  json_field_optional<std::string, "value-string"> value_string;
   static constexpr auto holder = detail::type_holder< //
       decltype(value_int), decltype(value_bool), decltype(value_string)> {};
 };
@@ -79,13 +75,10 @@ constexpr static auto base_array_optional = R"(
 }
 )";
 
-constexpr static auto values_str = "values";
-constexpr static auto more_values_str = "more-values";
-
 struct array_tag
 {
-  json_field_optional<std::string[], values_str> values;
-  json_field_required<int[], more_values_str> more_values;
+  json_field_optional<std::string[], "values"> values;
+  json_field_required<int[], "more-values"> more_values;
   static constexpr auto holder = detail::type_holder<decltype(values), decltype(more_values)> {};
 };
 typedef json_struct<array_tag> array_configuration;
@@ -129,17 +122,6 @@ namespace logger_test
 using namespace detail;
 using namespace json;
 
-constexpr static auto logger_str = "logger";
-constexpr static auto name_str = "name";
-constexpr static auto filepath_str = "filepath";
-constexpr static auto pattern_str = "pattern";
-constexpr static auto rotate_str = "rotate";
-constexpr static auto max_size_str = "max-size";
-constexpr static auto max_files_str = "max-files";
-constexpr static auto async_str = "async";
-constexpr static auto thread_pool_size_str = "thread-pool-size";
-constexpr static auto queue_size_str = "queue-size";
-
 constexpr static auto full_logger = R"(
 {
     "logger": {
@@ -160,27 +142,27 @@ constexpr static auto full_logger = R"(
 
 struct rotate_tag
 {
-  json_field_required<int, max_size_str> max_size;
-  json_field_required<int, max_files_str> max_files;
+  json_field_required<int, "max-size"> max_size;
+  json_field_required<int, "max-files"> max_files;
   static constexpr auto holder = detail::type_holder<decltype(max_size), decltype(max_files)> {};
 };
 typedef json_struct<rotate_tag> rotate_configuration;
 
 struct async_tag
 {
-  json_field_required<int, thread_pool_size_str> thread_pool_size;
-  json_field_required<int, queue_size_str> queue_size;
+  json_field_required<int, "thread-pool-size"> thread_pool_size;
+  json_field_required<int, "queue-size"> queue_size;
   static constexpr auto holder = detail::type_holder<decltype(thread_pool_size), decltype(queue_size)> {};
 };
 typedef json_struct<async_tag> async_configuration;
 
 struct logger_tag
 {
-  json_field_required<std::string, name_str> name;
-  json_field_required<std::string, filepath_str> filepath;
-  json_field_optional<std::string, pattern_str> pattern;
-  json_field_optional<rotate_configuration, rotate_str> rotate;
-  json_field_optional<async_configuration, async_str> async;
+  json_field_required<std::string, "name"> name;
+  json_field_required<std::string, "filepath"> filepath;
+  json_field_optional<std::string, "pattern"> pattern;
+  json_field_optional<rotate_configuration, "rotate"> rotate;
+  json_field_optional<async_configuration, "async"> async;
   static constexpr auto holder = detail::type_holder<                                          //
       decltype(name), decltype(filepath), decltype(pattern), decltype(rotate), decltype(async) //
       > {};                                                                                    //
@@ -189,7 +171,7 @@ typedef json_struct<logger_tag> logger_configuration;
 
 struct root_tag
 {
-  json_field_required<logger_configuration, logger_str> logger;
+  json_field_required<logger_configuration, "logger"> logger;
   static constexpr auto holder = detail::type_holder<decltype(logger)> {};
 };
 typedef json_struct<root_tag> root_configuration;
@@ -243,40 +225,30 @@ constexpr static auto array_complex_json = R"(
 }
 )";
 
-constexpr static auto name_str = "name";
-constexpr static auto key_str = "key";
-constexpr static auto value_str = "value";
-constexpr static auto optionality_str = "optionality";
-constexpr static auto flag_str = "flag";
-constexpr static auto options_str = "options";
-constexpr static auto other_str = "other";
-constexpr static auto AAA_str = "AAA";
-constexpr static auto BBB_str = "BBB";
-
 struct key_value_tag
 {
-  json_field_required<std::string, key_str> key;
-  json_field_required<std::string, value_str> value;
-  json_field_optional<int[], optionality_str> optionality;
+  json_field_required<std::string, "key"> key;
+  json_field_required<std::string, "value"> value;
+  json_field_optional<int[], "optionality"> optionality;
   static constexpr auto holder = detail::type_holder<decltype(key), decltype(value), decltype(optionality)> {};
 };
 typedef json_struct<key_value_tag> key_value_configuration;
 
 struct other_tag
 {
-  json_field_required<int, AAA_str> AAA;
-  json_field_required<int, BBB_str> BBB;
+  json_field_required<int, "AAA"> AAA;
+  json_field_required<int, "BBB"> BBB;
   static constexpr auto holder = detail::type_holder<decltype(AAA), decltype(BBB)> {};
 };
 typedef json_struct<other_tag> other_configuration;
 
 struct root_tag
 {
-  json_field_required<std::string, name_str> name;
-  json_field_required<std::string, value_str> value;
-  json_field_optional<bool, flag_str> flag;
-  json_field_required<key_value_configuration[], options_str> options;
-  json_field_optional<other_configuration, other_str> other;
+  json_field_required<std::string, "name"> name;
+  json_field_required<std::string, "value"> value;
+  json_field_optional<bool, "flag"> flag;
+  json_field_required<key_value_configuration[], "options"> options;
+  json_field_optional<other_configuration, "other"> other;
   static constexpr auto holder = detail::type_holder< //
       decltype(name), decltype(value), decltype(flag), decltype(options), decltype(other)> {};
 };
