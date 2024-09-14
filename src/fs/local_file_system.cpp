@@ -79,6 +79,23 @@ bool local_file_system::remove(const std::string_view &path)
     return result;
 }
 
+bool local_file_system::copy(const std::string_view &src, const std::string_view &dst)
+{
+  boost::filesystem::copy(src, dst, m_error);
+  if (m_error)
+  {
+    logging_error();
+    return false;
+  }
+  else
+    return true;
+}
+
+bool local_file_system::move(const std::string_view &src, const std::string_view &dst)
+{
+  return rename(src, dst);
+}
+
 bool local_file_system::is_exists(const std::string_view &path) noexcept
 {
   return boost::filesystem::exists(path);
@@ -122,31 +139,32 @@ bool local_file_system::mkdir(const std::string_view &path) noexcept
     return result;
 }
 
+bool local_file_system::copy_from_local(const std::string_view &src, const std::string_view &dst)
+{
+  return copy(src, dst);
+}
+
+bool local_file_system::move_from_local(const std::string_view &src, const std::string_view &dst)
+{
+  return move(src, dst);
+}
+
+bool local_file_system::copy_to_local(const std::string_view &src, const std::string_view &dst)
+{
+  return copy(src, dst);
+}
+
+bool local_file_system::move_to_local(const std::string_view &src, const std::string_view &dst)
+{
+  return move(src, dst);
+}
+
 void local_file_system::lock(file &f, bool is_shared)
 {
   throw err;
 }
 
 void local_file_system::release(file &f)
-{
-  throw err;
-}
-
-void local_file_system::copy_from_local(file &src, file &dst)
-{
-  throw err;
-}
-
-void local_file_system::move_from_local(file &src, file &dst)
-{
-}
-
-void local_file_system::copy_to_local(file &src, file &dst)
-{
-  throw err;
-}
-
-void local_file_system::move_to_local(file &src, file &dst)
 {
   throw err;
 }

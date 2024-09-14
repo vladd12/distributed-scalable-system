@@ -21,6 +21,8 @@ public:
 
   bool rename(const std::string_view &old_path, const std::string_view &new_path) override;
   bool remove(const std::string_view &path) override;
+  bool copy(const std::string_view &src, const std::string_view &dst) override;
+  bool move(const std::string_view &src, const std::string_view &dst) override;
 
   bool is_exists(const std::string_view &path) noexcept override;
   bool is_directory(const std::string_view &path) noexcept override;
@@ -30,13 +32,13 @@ public:
 
   bool mkdir(const std::string_view &path) noexcept override;
 
+  bool copy_from_local(const std::string_view &src, const std::string_view &dst) override;
+  bool move_from_local(const std::string_view &src, const std::string_view &dst) override;
+  bool copy_to_local(const std::string_view &src, const std::string_view &dst) override;
+  bool move_to_local(const std::string_view &src, const std::string_view &dst) override;
+
   void lock(file &f, bool is_shared) override;
   void release(file &f) override;
-
-  void copy_from_local(file &src, file &dst) override;
-  void move_from_local(file &src, file &dst) override;
-  void copy_to_local(file &src, file &dst) override;
-  void move_to_local(file &src, file &dst) override;
 
   void close() override;
 };

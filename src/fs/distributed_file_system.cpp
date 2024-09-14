@@ -27,6 +27,16 @@ bool distributed_file_system::remove(const std::string_view &path)
   throw err;
 }
 
+bool distributed_file_system::copy(const std::string_view &src, const std::string_view &dst)
+{
+  throw err;
+}
+
+bool distributed_file_system::move(const std::string_view &src, const std::string_view &dst)
+{
+  throw err;
+}
+
 bool distributed_file_system::is_exists(const std::string_view &path) noexcept
 {
   /// TODO: implement this
@@ -66,23 +76,28 @@ void distributed_file_system::release(file &f)
   throw err;
 }
 
-void distributed_file_system::copy_from_local(file &src, file &dst)
+bool distributed_file_system::copy_from_local(const std::string_view &src, const std::string_view &dst)
 {
   throw err;
+  return false;
 }
 
-void distributed_file_system::move_from_local(file &src, file &dst)
-{
-}
-
-void distributed_file_system::copy_to_local(file &src, file &dst)
+bool distributed_file_system::move_from_local(const std::string_view &src, const std::string_view &dst)
 {
   throw err;
+  return false;
 }
 
-void distributed_file_system::move_to_local(file &src, file &dst)
+bool distributed_file_system::copy_to_local(const std::string_view &src, const std::string_view &dst)
 {
   throw err;
+  return false;
+}
+
+bool distributed_file_system::move_to_local(const std::string_view &src, const std::string_view &dst)
+{
+  throw err;
+  return false;
 }
 
 void distributed_file_system::close()

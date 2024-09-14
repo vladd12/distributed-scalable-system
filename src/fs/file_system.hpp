@@ -41,6 +41,8 @@ public:
 
   virtual bool rename(const std::string_view &old_path, const std::string_view &new_path) = 0;
   virtual bool remove(const std::string_view &path) = 0;
+  virtual bool copy(const std::string_view &src, const std::string_view &dst) = 0;
+  virtual bool move(const std::string_view &src, const std::string_view &dst) = 0;
 
   virtual bool is_exists(const std::string_view &path) noexcept = 0;
   virtual bool is_directory(const std::string_view &path) noexcept = 0;
@@ -68,13 +70,13 @@ public:
 
   virtual bool mkdir(const std::string_view &path) noexcept = 0;
 
+  virtual bool copy_from_local(const std::string_view &src, const std::string_view &dst) = 0;
+  virtual bool move_from_local(const std::string_view &src, const std::string_view &dst) = 0;
+  virtual bool copy_to_local(const std::string_view &src, const std::string_view &dst) = 0;
+  virtual bool move_to_local(const std::string_view &src, const std::string_view &dst) = 0;
+
   virtual void lock(file &f, bool is_shared) = 0;
   virtual void release(file &f) = 0;
-
-  virtual void copy_from_local(file &src, file &dst) = 0;
-  virtual void move_from_local(file &src, file &dst) = 0;
-  virtual void copy_to_local(file &src, file &dst) = 0;
-  virtual void move_to_local(file &src, file &dst) = 0;
 
   /// \brief No more filesystem operations are needed.  Will release any held locks.
   virtual void close() = 0;
