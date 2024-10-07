@@ -44,7 +44,7 @@ struct fs_configuration
 {
   std::string host;   ///< The host of the default file system.
                       ///< May be "localhost" or a IP address for DFS.
-  std::uint64_t port; ///< The port of the default file system.
+  std::uint16_t port; ///< The port of the default file system.
 
   explicit fs_configuration(const nlohmann::json &json);
 };
