@@ -66,12 +66,12 @@ bool distributed_file_system::mkdir(const std::string_view &path) noexcept
   return false;
 }
 
-void distributed_file_system::lock(file &f, bool is_shared)
+void distributed_file_system::lock(const std::string_view &path, bool is_shared)
 {
   throw err;
 }
 
-void distributed_file_system::release(file &f)
+void distributed_file_system::release(const std::string_view &path)
 {
   throw err;
 }

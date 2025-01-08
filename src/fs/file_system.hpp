@@ -27,11 +27,10 @@ class file_system : private boost::noncopyable, public std::enable_shared_from_t
 public:
   typedef std::shared_ptr<file_system> ptr;
 
-  virtual ~file_system()
-  {
-  }
+  explicit file_system() noexcept = default;
+  virtual ~file_system() noexcept = default;
 
-  ptr getptr()
+  ptr get_ptr()
   {
     return shared_from_this();
   }
@@ -75,8 +74,8 @@ public:
   virtual bool copy_to_local(const std::string_view &src, const std::string_view &dst) = 0;
   virtual bool move_to_local(const std::string_view &src, const std::string_view &dst) = 0;
 
-  virtual void lock(file &f, bool is_shared) = 0;
-  virtual void release(file &f) = 0;
+  virtual void lock(const std::string_view &path, bool is_shared) = 0;
+  virtual void release(const std::string_view &path) = 0;
 
   /// \brief No more filesystem operations are needed.  Will release any held locks.
   virtual void close() = 0;

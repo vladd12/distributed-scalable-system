@@ -14,6 +14,8 @@ private:
   void logging_error();
 
   std::vector<std::string> get_directory_files(const std::string_view &path);
+  std::size_t get_hash_for(const std::string_view &path);
+  std::string get_lock_file_path_for(const size_t hash);
 
 public:
   std::istream open(const std::string_view &path) override;
@@ -37,8 +39,8 @@ public:
   bool copy_to_local(const std::string_view &src, const std::string_view &dst) override;
   bool move_to_local(const std::string_view &src, const std::string_view &dst) override;
 
-  void lock(file &f, bool is_shared) override;
-  void release(file &f) override;
+  void lock(const std::string_view &path, bool is_shared) override;
+  void release(const std::string_view &path) override;
 
   void close() override;
 };

@@ -21,8 +21,7 @@ include(get_fmt) # Getting fmt library
 include(get_spdlog) # Getting spdlog library
 include(get_nlohmann_json) # Getting nlohmann_json library
 
-find_package(ZLIB COMPONENTS ZLIB REQUIRED) # # Finding zlib (for boost::iostreams)
-find_package(Boost COMPONENTS boost filesystem iostreams program_options REQUIRED) # Finding boost
+find_package(Boost COMPONENTS filesystem iostreams program_options REQUIRED) # Finding boost
 
 # Setup variables for directories
 set(DCS_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
@@ -70,7 +69,6 @@ target_include_directories(dcs-daemon PRIVATE "${DCS_SOURCES_DIR}")
 
 target_link_libraries(dcs-daemon PRIVATE
   Boost::program_options
-  Boost::boost
   Boost::filesystem
   Boost::iostreams
   fmt::fmt

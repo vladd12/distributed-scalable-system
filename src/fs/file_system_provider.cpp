@@ -23,13 +23,13 @@ file_system_ptr file_system_provider::get(const std::string &host, std::uint64_t
   {
     if (host == "localhost")
     {
-      file_system_ptr fs { std::make_shared<local_file_system>() };
+      file_system_ptr fs { std::move(std::make_shared<local_file_system>()) };
       append(host_formated, fs);
       return fs;
     }
     else
     {
-      file_system_ptr fs { std::make_shared<distributed_file_system>() };
+      file_system_ptr fs { std::move(std::make_shared<distributed_file_system>()) };
       append(host_formated, fs);
       return fs;
     }

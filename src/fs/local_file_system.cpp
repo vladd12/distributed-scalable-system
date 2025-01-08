@@ -5,11 +5,10 @@
 #include <boost/iostreams/device/mapped_file.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <core/errors.hpp>
+#include <fmt/core.h>
 
 namespace fs
 {
-
-static const core::not_implemented_error err("func is not implemented yet");
 
 void local_file_system::logging_error()
 {
@@ -38,8 +37,29 @@ std::vector<std::string> local_file_system::get_directory_files(const std::strin
   return directory_files;
 }
 
+std::size_t local_file_system::get_hash_for(const std::string_view &path)
+{
+  std::hash<std::string_view> str_hasher;
+  return str_hasher(path);
+}
+
+std::string local_file_system::get_lock_file_path_for(const std::size_t path_hash)
+{
+  auto temp_path = boost::filesystem::temp_directory_path(m_error);
+  if (m_error)
+  {
+    logging_error();
+    throw core::io_error("Can't detect path for temporary files");
+  }
+  const auto temp_path_str = temp_path.string();
+  return fmt::vformat("{}/dcs/{}.lock", fmt::make_format_args(temp_path_str, path_hash));
+}
+
 std::istream local_file_system::open(const std::string_view &path)
 {
+  if (!is_exists(path))
+    throw core::file_not_found(fmt::format("File not found: {}", path));
+
   boost::iostreams::mapped_file_params params { path };
   params.length = size(path);
   params.flags = boost::iostreams::mapped_file::mapmode::readonly;
@@ -159,14 +179,24 @@ bool local_file_system::move_to_local(const std::string_view &src, const std::st
   return move(src, dst);
 }
 
-void local_file_system::lock(file &f, bool is_shared)
+void local_file_system::lock(const std::string_view &path, bool is_shared)
 {
-  throw err;
+  const auto path_hash = get_hash_for(path);
+  const auto lock_file_path = get_lock_file_path_for(path_hash);
+  auto lock_file_ostream = create(lock_file_path);
+  lock_file_ostream << path_hash << '\n';
+  lock_file_ostream.flush();
 }
 
-void local_file_system::release(file &f)
+void local_file_system::release(const std::string_view &path)
 {
-  throw err;
+  const auto path_hash = get_hash_for(path);
+  const auto lock_file_path = get_lock_file_path_for(path_hash);
+  if (!is_exists(lock_file_path))
+    throw core::io_error("Given target not held as lock");
+
+  if (!remove(lock_file_path))
+    throw core::io_error(fmt::format("Can't remove lock file: {}", lock_file_path));
 }
 
 void local_file_system::close()
