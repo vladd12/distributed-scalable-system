@@ -20,6 +20,7 @@ include(get_boost) # Getting boost library
 include(get_fmt) # Getting fmt library
 include(get_spdlog) # Getting spdlog library
 include(get_nlohmann_json) # Getting nlohmann_json library
+include(get_grpc) # Getting gRPC library
 
 find_package(Boost COMPONENTS filesystem iostreams program_options REQUIRED) # Finding boost
 
