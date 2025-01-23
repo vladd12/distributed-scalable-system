@@ -1,19 +1,6 @@
 #pragma once
 
-// Well, using clangd broke some code
-#if defined(_MSC_VER) && defined(_MSVC_LANG) && defined(__clang__)
-#define BOOST_ASIO_HAS_CO_AWAIT
-#endif
-
 #include <boost/asio.hpp>
-#include <boost/asio/awaitable.hpp>
-#include <boost/asio/co_spawn.hpp>
-#include <boost/asio/detached.hpp>
-#include <boost/asio/impl/co_spawn.hpp>
-#include <boost/asio/io_context.hpp>
-#include <boost/asio/ip/tcp.hpp>
-#include <boost/asio/signal_set.hpp>
-#include <boost/asio/write.hpp>
 #include <boost/bind/bind.hpp>
 #include <boost/noncopyable.hpp>
 
@@ -22,14 +9,6 @@
 
 namespace ipc
 {
-
-// clang-format off
-template <typename T>
-concept awaitable = requires(T await)
-{
-  { await.await_ready() } -> std::same_as<bool>;
-};
-// clang-format on
 
 class async_service : public boost::noncopyable
 {
@@ -113,7 +92,6 @@ asio::awaitable<void> read()
   }
   co_return;
 }
-*/
 
 class tcp_server : public async_service
 {
@@ -154,7 +132,6 @@ public:
   }
 };
 
-/*
 class network_service : public async_service
 {
 };
