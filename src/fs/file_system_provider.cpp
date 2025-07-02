@@ -7,6 +7,11 @@
 namespace fs
 {
 
+file_system_provider::file_system_provider(config::configuration_ptr cfg)
+  : m_cfg(cfg)
+{
+}
+
 void file_system_provider::append(const std::string &host_formated, file_system_ptr &fs)
 {
   auto val = m_filesystems.insert({ host_formated, fs });
@@ -29,7 +34,7 @@ file_system_ptr file_system_provider::get(const std::string &host, std::uint64_t
     }
     else
     {
-      file_system_ptr fs { std::move(std::make_shared<distributed_file_system>()) };
+      file_system_ptr fs { std::move(std::make_shared<distributed_file_system>(m_cfg->dfs)) };
       append(host_formated, fs);
       return fs;
     }

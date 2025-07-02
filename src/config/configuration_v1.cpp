@@ -131,7 +131,7 @@ configuration_ptr parse_configuration(const std::string_view &filepath)
 configuration_ptr parse_configuration(std::ifstream &file)
 {
   const nlohmann::json data = nlohmann::json::parse(file, nullptr, true, true);
-  return std::make_unique<configuration>(data);
+  return std::make_shared<configuration>(data);
 }
 
 } // namespace config

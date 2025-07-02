@@ -184,7 +184,7 @@ struct mapred_configuration
 
 struct configuration
 {
-  typedef std::unique_ptr<configuration> ptr;
+  typedef std::shared_ptr<configuration> ptr;
   logger_configuration logger;
   fs_configuration fs;
   file_configuration file;
