@@ -1,13 +1,13 @@
 #pragma once
 
-#include <fs/file_system.hpp>
+#include <boost/asio.hpp>
+#include <chrono>
 #include <config/configuration_v1.hpp>
+#include <fs/file_system.hpp>
 #include <map>
 #include <mutex>
-#include <unordered_map>
-#include <chrono>
 #include <random>
-#include <boost/asio.hpp>
+#include <unordered_map>
 
 namespace fs
 {
@@ -61,21 +61,23 @@ private:
   std::mutex m_nodes_mutex;
   std::random_device m_rd;
   std::mt19937 m_gen;
-  
+
   std::size_t m_replication_factor;
   static constexpr std::size_t BLOCK_SIZE = 64 * 1024 * 1024; // 64MB
 
 public:
-  explicit name_node(std::size_t replication_factor) : m_gen(m_rd()), m_replication_factor(replication_factor) {}
-  
-  bool create_file(const std::string& path, bool is_directory = false);
-  bool delete_file(const std::string& path);
-  bool rename_file(const std::string& old_path, const std::string& new_path);
-  file_metadata* get_metadata(const std::string& path);
-  std::vector<std::string> list_directory(const std::string& path);
+  explicit name_node(std::size_t replication_factor) : m_gen(m_rd()), m_replication_factor(replication_factor)
+  {
+  }
+
+  bool create_file(const std::string &path, bool is_directory = false);
+  bool delete_file(const std::string &path);
+  bool rename_file(const std::string &old_path, const std::string &new_path);
+  file_metadata *get_metadata(const std::string &path);
+  std::vector<std::string> list_directory(const std::string &path);
   std::vector<data_node> select_data_nodes_for_write(std::size_t count = 0);
-  void register_data_node(const data_node& node);
-  void update_heartbeat(const std::string& node_id);
+  void register_data_node(const data_node &node);
+  void update_heartbeat(const std::string &node_id);
 };
 
 class distributed_file_system final : public file_system
@@ -86,15 +88,16 @@ private:
   std::unordered_map<std::string, std::unique_ptr<std::mutex>> m_path_locks;
   std::mutex m_locks_mutex;
   config::dfs_configuration m_dfs_config;
-  
+
   // Helper methods
   std::string generate_block_id();
-  bool transfer_data_to_nodes(const std::vector<data_node>& nodes, const std::string& block_id, const std::vector<char>& data);
-  std::vector<char> read_data_from_nodes(const file_block& block);
-  bool replicate_block(const std::string& block_id, const std::vector<data_node>& target_nodes);
-  
+  bool transfer_data_to_nodes(
+      const std::vector<data_node> &nodes, const std::string &block_id, const std::vector<char> &data);
+  std::vector<char> read_data_from_nodes(const file_block &block);
+  bool replicate_block(const std::string &block_id, const std::vector<data_node> &target_nodes);
+
 public:
-  explicit distributed_file_system(const config::dfs_configuration& dfs_config);
+  explicit distributed_file_system(const config::dfs_configuration &dfs_config);
   ~distributed_file_system() = default;
   std::istream open(const std::string_view &path) override;
   std::ostream create(const std::string_view &path) override;

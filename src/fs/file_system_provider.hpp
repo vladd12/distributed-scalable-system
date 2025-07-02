@@ -1,9 +1,8 @@
 #pragma once
 
-#include <fs/file_system.hpp>
 #include <config/configuration_v1.hpp>
+#include <fs/file_system.hpp>
 #include <unordered_map>
-#include <memory>
 
 namespace fs
 {

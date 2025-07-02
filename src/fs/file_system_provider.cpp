@@ -7,8 +7,7 @@
 namespace fs
 {
 
-file_system_provider::file_system_provider(config::configuration_ptr cfg)
-  : m_cfg(cfg)
+file_system_provider::file_system_provider(config::configuration_ptr cfg) : m_cfg(cfg)
 {
 }
 
