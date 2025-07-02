@@ -7,6 +7,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace config
 {
@@ -61,6 +62,17 @@ struct file_configuration
   explicit file_configuration(const nlohmann::json &json);
 };
 
+struct data_node_configuration
+{
+  std::string node_id;       ///< Unique identifier for the data node
+  std::string host;          ///< Host address of the data node
+  std::uint16_t port;        ///< Port number for the data node
+  std::uint64_t capacity;    ///< Storage capacity in bytes
+  std::string data_dir;      ///< Local directory where this node stores data
+
+  explicit data_node_configuration(const nlohmann::json &json);
+};
+
 struct dfs_configuration
 {
   std::uint64_t node_port;   ///< The port number that the dfs datanode server uses
@@ -74,6 +86,7 @@ struct dfs_configuration
   std::uint64_t replication; ///< How many copies we try to have at all times. The
                              ///< actual number of replications is at max the number
                              ///< of datanodes in the cluster.
+  std::vector<data_node_configuration> data_nodes; ///< Configuration for data nodes
 
   explicit dfs_configuration(const nlohmann::json &json);
 };

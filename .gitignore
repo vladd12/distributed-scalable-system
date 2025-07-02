@@ -34,3 +34,9 @@
 # CMake
 *.user
 build/*
+
+# clangd
+.cache/*
+
+# VS Code files
+.vscode/*

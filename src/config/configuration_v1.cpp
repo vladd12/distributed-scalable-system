@@ -40,12 +40,28 @@ file_configuration::file_configuration(const nlohmann::json &json) //
 {
 }
 
+data_node_configuration::data_node_configuration(const nlohmann::json &json) //
+    : node_id(json["node-id"])
+    , host(json["host"])
+    , port(json["port"])
+    , capacity(json["capacity"])
+    , data_dir(json["data-dir"])
+{
+}
+
 dfs_configuration::dfs_configuration(const nlohmann::json &json) //
     : node_port(json["node-port"])
     , name_dir(json["name-dir"])
     , data_dir(json["data-dir"])
     , replication(json["replication"])
 {
+  if (json.contains("data-nodes"))
+  {
+    for (const auto& node_json : json["data-nodes"])
+    {
+      data_nodes.emplace_back(node_json);
+    }
+  }
 }
 
 sort_configuration::sort_configuration(const nlohmann::json &json) //

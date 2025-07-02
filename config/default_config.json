@@ -26,7 +26,30 @@
         "node-port": 50010,
         "name-dir": "/tmp/dcs/dfs/name",
         "data-dir": "/tmp/dcs/dfs/data",
-        "replication": 3
+        "replication": 3,
+        "data-nodes": [
+            {
+                "node-id": "datanode_1",
+                "host": "localhost",
+                "port": 50010,
+                "capacity": 1073741824,
+                "data-dir": "/tmp/dcs/dfs/data/node1"
+            },
+            {
+                "node-id": "datanode_2",
+                "host": "localhost",
+                "port": 50011,
+                "capacity": 1073741824,
+                "data-dir": "/tmp/dcs/dfs/data/node2"
+            },
+            {
+                "node-id": "datanode_3",
+                "host": "localhost",
+                "port": 50012,
+                "capacity": 2147483648,
+                "data-dir": "/tmp/dcs/dfs/data/node3"
+            }
+        ]
     },
     "io": {
         "sort": {
