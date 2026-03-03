@@ -49,7 +49,7 @@ set(DCS_DAEMON_HEADERS
   "${DCS_SOURCES_DIR}/fs/distributed_file_system.hpp"
   "${DCS_SOURCES_DIR}/fs/file_system_provider.hpp"
 
-  "${DCS_SOURCES_DIR}/ipc/ipc.hpp"
+  "${DCS_SOURCES_DIR}/http/http_server.hpp"
 )
 set(DCS_DAEMON_SOURCES
   "${DCS_SOURCES_DIR}/core/cmd_line_args.cpp"
@@ -63,7 +63,7 @@ set(DCS_DAEMON_SOURCES
   "${DCS_SOURCES_DIR}/fs/distributed_file_system.cpp"
   "${DCS_SOURCES_DIR}/fs/file_system_provider.cpp"
 
-  "${DCS_SOURCES_DIR}/ipc/ipc.cpp"
+  "${DCS_SOURCES_DIR}/http/http_server.cpp"
 
   "${DCS_SOURCES_DIR}/main.cpp"
 )
