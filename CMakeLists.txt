@@ -17,14 +17,11 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 #include(get_gtest) # Getting googletest library
 include(get_conan) # Getting CMake conan
 include(get_boost) # Getting boost library using conan
-include(get_grpc) # Getting gRPC library using conan
 include(get_fmt) # Getting fmt library
 include(get_spdlog) # Getting spdlog library
 include(get_nlohmann_json) # Getting nlohmann_json library
 
 find_package(Boost COMPONENTS filesystem iostreams program_options REQUIRED) # Finding boost
-
-add_subdirectory(protos)
 
 # Setup variables for directories
 set(DCS_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
