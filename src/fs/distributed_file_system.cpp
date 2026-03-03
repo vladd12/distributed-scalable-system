@@ -9,7 +9,6 @@
 #include <fstream>
 #include <stdexcept>
 
-
 namespace fs
 {
 
@@ -285,7 +284,7 @@ bool distributed_file_system::move(const std::string_view &src, const std::strin
   return m_name_node->rename_file(std::string(src), std::string(dst));
 }
 
-bool distributed_file_system::is_exists(const std::string_view &path) noexcept
+bool distributed_file_system::is_exists(const std::string_view &path) const noexcept
 {
   try
   {
@@ -297,7 +296,7 @@ bool distributed_file_system::is_exists(const std::string_view &path) noexcept
   }
 }
 
-bool distributed_file_system::is_directory(const std::string_view &path) noexcept
+bool distributed_file_system::is_directory(const std::string_view &path) const noexcept
 {
   try
   {
@@ -309,7 +308,7 @@ bool distributed_file_system::is_directory(const std::string_view &path) noexcep
   }
 }
 
-std::uint64_t distributed_file_system::size(const std::string_view &path) noexcept
+std::uint64_t distributed_file_system::size(const std::string_view &path) const noexcept
 {
   try
   {

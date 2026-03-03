@@ -7,15 +7,20 @@
 #include <core/errors.hpp>
 #include <fmt/core.h>
 
-namespace fs
+namespace
 {
 
-void local_file_system::logging_error()
+void logging_error(const boost::system::error_code &error)
 {
-  [[maybe_unused]] const auto msg = m_error.message();
+
+  [[maybe_unused]] const auto msg = error.message();
   // TODO: logging error message and error category
-  m_error.clear();
 }
+
+} // anonymous namespace
+
+namespace fs
+{
 
 std::vector<std::string> local_file_system::get_directory_files(const std::string_view &path)
 {
@@ -45,10 +50,11 @@ std::size_t local_file_system::get_hash_for(const std::string_view &path)
 
 std::string local_file_system::get_lock_file_path_for(const std::size_t path_hash)
 {
-  auto temp_path = boost::filesystem::temp_directory_path(m_error);
-  if (m_error)
+  boost::system::error_code error;
+  auto temp_path = boost::filesystem::temp_directory_path(error);
+  if (error)
   {
-    logging_error();
+    ::logging_error(error);
     throw core::io_error("Can't detect path for temporary files");
   }
   const auto temp_path_str = temp_path.string();
@@ -77,10 +83,11 @@ std::ostream local_file_system::create(const std::string_view &path)
 
 bool local_file_system::rename(const std::string_view &old_path, const std::string_view &new_path)
 {
-  boost::filesystem::rename(old_path, new_path, m_error);
-  if (m_error)
+  boost::system::error_code error;
+  boost::filesystem::rename(old_path, new_path, error);
+  if (error)
   {
-    logging_error();
+    ::logging_error(error);
     return false;
   }
   else
@@ -89,10 +96,11 @@ bool local_file_system::rename(const std::string_view &old_path, const std::stri
 
 bool local_file_system::remove(const std::string_view &path)
 {
-  auto result = boost::filesystem::remove(path, m_error);
-  if (m_error)
+  boost::system::error_code error;
+  auto result = boost::filesystem::remove(path, error);
+  if (error)
   {
-    logging_error();
+    ::logging_error(error);
     return false;
   }
   else
@@ -101,10 +109,11 @@ bool local_file_system::remove(const std::string_view &path)
 
 bool local_file_system::copy(const std::string_view &src, const std::string_view &dst)
 {
-  boost::filesystem::copy(src, dst, m_error);
-  if (m_error)
+  boost::system::error_code error;
+  boost::filesystem::copy(src, dst, error);
+  if (error)
   {
-    logging_error();
+    ::logging_error(error);
     return false;
   }
   else
@@ -116,22 +125,23 @@ bool local_file_system::move(const std::string_view &src, const std::string_view
   return rename(src, dst);
 }
 
-bool local_file_system::is_exists(const std::string_view &path) noexcept
+bool local_file_system::is_exists(const std::string_view &path) const noexcept
 {
   return boost::filesystem::exists(path);
 }
 
-bool local_file_system::is_directory(const std::string_view &path) noexcept
+bool local_file_system::is_directory(const std::string_view &path) const noexcept
 {
   return boost::filesystem::is_directory(path);
 }
 
-std::uint64_t local_file_system::size(const std::string_view &path) noexcept
+std::uint64_t local_file_system::size(const std::string_view &path) const noexcept
 {
-  auto size = boost::filesystem::file_size(path, m_error);
-  if (m_error)
+  boost::system::error_code error;
+  auto size = boost::filesystem::file_size(path, error);
+  if (error)
   {
-    logging_error();
+    ::logging_error(error);
     return 0;
   }
   else
@@ -149,10 +159,11 @@ std::vector<std::string> local_file_system::list_files(const std::string_view &p
 
 bool local_file_system::mkdir(const std::string_view &path) noexcept
 {
-  auto result = boost::filesystem::create_directory(path, m_error);
-  if (m_error)
+  boost::system::error_code error;
+  auto result = boost::filesystem::create_directory(path, error);
+  if (error)
   {
-    logging_error();
+    ::logging_error(error);
     return false;
   }
   else

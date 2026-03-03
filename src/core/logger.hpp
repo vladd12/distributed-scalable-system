@@ -6,12 +6,20 @@
 namespace core
 {
 
-typedef ::config::logger_configuration logger_config;
+using logger_config = ::config::logger_configuration;
 
-/// \brief Creates logger.
+/// \brief Creates and initializes the global logger
+/// \param cfg Logger configuration
+/// \throws spdlog::spdlog_ex if logger initialization fails
 void init_logger(const logger_config &cfg);
 
-/// \brief Returns created logger.
+/// \brief Returns the initialized logger instance
+/// \return Reference to the global logger
+/// \throws std::runtime_error if logger hasn't been initialized
 spdlog::logger &get_logger();
+
+/// \brief Checks if logger has been initialized
+/// \return true if logger is initialized, false otherwise
+bool is_logger_initialized() noexcept;
 
 } // namespace core

@@ -66,7 +66,16 @@ void init_logger(const logger_config &cfg)
 
 spdlog::logger &get_logger()
 {
-  return *spdlog::get(logger_name);
+  auto logger = spdlog::get(logger_name);
+  if (!logger) {
+    throw std::runtime_error("Logger not initialized. Call init_logger() first.");
+  }
+  return *logger;
+}
+
+bool is_logger_initialized() noexcept
+{
+  return spdlog::get(logger_name) != nullptr;
 }
 
 } // namespace core
