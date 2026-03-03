@@ -1,0 +1,82 @@
+{
+    "logger": {
+        "name": "default_logger",
+        "filepath": "logs/log.txt",
+        "pattern": "[%H:%M:%S %z] [%n] [%^-%L-%$] [thread %t] %v",
+        "log-level": "debug",
+        "console-output": true,
+        "rotate": {
+            "max-size": 10,
+            "max-files" : 10
+        },
+        "async": {
+            "thread-pool-size": 1,
+            "queue-size": 1024
+        }
+    },
+    "fs": {
+        "host": "localhost",
+        "port": 9000
+    },
+    "file": {
+        "limit": 65536,
+        "ignored": true
+    },
+    "dfs": {
+        "name-node": {
+            "node-name": "namenode",
+            "node-port": 50010,
+            "data-dir": "/tmp/dcs/dfs/data",
+            "name-dir": "/tmp/dcs/dfs/name",
+            "replication": 3,
+            "data-nodes": [
+                {
+                    "host": "localhost",
+                    "port": 50011
+                },
+                {
+                    "host": "localhost",
+                    "port": 50012
+                },
+                {
+                    "host": "localhost",
+                    "port": 50013
+                }
+            ]
+        }
+    },
+    "io": {
+        "sort": {
+            "factor": 10,
+            "buffer": 100
+        },
+        "file-buffer-size": 4096,
+        "bytes-per-checksum": 512,
+        "skip-checksum-errors": false,
+        "map-index-skip": 0
+    },
+    "ipc": {
+        "timeout": 60000
+    },
+    "map-reduce": {
+        "job-tracker": {
+            "location": "local",
+            "info-port": 50030
+        },
+        "task-tracker": {
+            "output-port": 50040,
+            "report-port": 50050,
+            "tasks-limit": 2,
+            "child-heap-size": 200,
+            "task-timeout": 60000
+        },
+        "directories": {
+            "local": "/tmp/dcs/mapred/local",
+            "system": "/tmp/dcs/mapred/system",
+            "temp": "/tmp/dcs/mapred/temp"
+        },
+        "map-tasks": 2,
+        "reduce-tasks": 1,
+        "combine-buffer-size": 100000
+    }
+}

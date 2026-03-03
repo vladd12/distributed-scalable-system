@@ -9,7 +9,7 @@ namespace dfs
 // Data node information
 struct data_node
 {
-  std::string node_id;
+  std::string node_name;
   std::string host;
   std::uint16_t port;
   std::uint64_t capacity;

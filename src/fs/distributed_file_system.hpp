@@ -18,7 +18,7 @@ private:
   boost::asio::io_context m_io_context;
   std::unordered_map<std::string, std::unique_ptr<std::mutex>> m_path_locks;
   std::mutex m_locks_mutex;
-  config::dfs_configuration m_dfs_config;
+  config::name_node_configuration m_name_node_config;
 
   // Helper methods
   std::string generate_block_id();
@@ -28,7 +28,7 @@ private:
   bool replicate_block(const std::string &block_id, const std::vector<dfs::data_node> &target_nodes);
 
 public:
-  explicit distributed_file_system(const config::dfs_configuration &dfs_config);
+  explicit distributed_file_system(const config::name_node_configuration &name_node_config);
   ~distributed_file_system() = default;
   std::istream open(const std::string_view &path) override;
   std::ostream create(const std::string_view &path) override;
