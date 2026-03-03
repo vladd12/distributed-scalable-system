@@ -40,6 +40,10 @@ set(DCS_DAEMON_HEADERS
   "${DCS_SOURCES_DIR}/config/json/json_field_base.hpp"
   "${DCS_SOURCES_DIR}/config/json/json_struct.hpp"
 
+  "${DCS_SOURCES_DIR}/dfs/block.hpp"
+  "${DCS_SOURCES_DIR}/dfs/data_node.hpp"
+  "${DCS_SOURCES_DIR}/dfs/name_node.hpp"
+
   "${DCS_SOURCES_DIR}/fs/file_system.hpp"
   "${DCS_SOURCES_DIR}/fs/local_file_system.hpp"
   "${DCS_SOURCES_DIR}/fs/distributed_file_system.hpp"
@@ -52,6 +56,8 @@ set(DCS_DAEMON_SOURCES
   "${DCS_SOURCES_DIR}/core/logger.cpp"
 
   "${DCS_SOURCES_DIR}/config/configuration_v1.cpp"
+
+  "${DCS_SOURCES_DIR}/dfs/name_node.cpp"
 
   "${DCS_SOURCES_DIR}/fs/local_file_system.cpp"
   "${DCS_SOURCES_DIR}/fs/distributed_file_system.cpp"
@@ -80,8 +86,8 @@ target_link_libraries(dcs-daemon PRIVATE
 add_custom_command(
   TARGET dcs-daemon POST_BUILD COMMAND
   ${CMAKE_COMMAND} -E copy
-  ${CMAKE_CURRENT_SOURCE_DIR}/config/default_config.json
-  ${CMAKE_CURRENT_BINARY_DIR}/default_config.json
+    ${CMAKE_CURRENT_SOURCE_DIR}/config/default_config.json
+    ${CMAKE_CURRENT_BINARY_DIR}/default_config.json
 )
 
 # If enabled building tests for some features
