@@ -15,11 +15,12 @@ int main(int argc, char *argv[])
       arguments.print_help(std::cout);
       return 2;
     }
-    auto cfg { config::parse_configuration(arguments.get_config_filepath()) };
-    core::init_logger(cfg->logger);
+    auto cfg_ptr { config::parse_configuration(arguments.get_config_filepath()) };
+    core::init_logger(cfg_ptr->logger);
     core::get_logger().info("Logger init is successfully");
-    fs::file_system_provider fs_provider {};
-    auto fs = fs_provider.get(cfg->fs.host, cfg->fs.port);
+
+    fs::file_system_provider fs_provider { cfg_ptr };
+    auto fs = fs_provider.get(cfg_ptr->fs.host, cfg_ptr->fs.port);
     fs->close();
   } catch (const spdlog::spdlog_ex &ex)
   {

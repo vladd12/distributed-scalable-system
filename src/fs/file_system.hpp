@@ -35,7 +35,12 @@ public:
     return shared_from_this();
   }
 
+  /// \brief Opens a file for reading
+  /// \param path The file path to open
   virtual std::istream open(const std::string_view &path) = 0;
+
+  /// \brief Creates a file for writing
+  /// \param path The file path to create
   virtual std::ostream create(const std::string_view &path) = 0;
 
   virtual bool rename(const std::string_view &old_path, const std::string_view &new_path) = 0;
@@ -43,10 +48,25 @@ public:
   virtual bool copy(const std::string_view &src, const std::string_view &dst) = 0;
   virtual bool move(const std::string_view &src, const std::string_view &dst) = 0;
 
-  virtual bool is_exists(const std::string_view &path) noexcept = 0;
-  virtual bool is_directory(const std::string_view &path) noexcept = 0;
-  virtual std::uint64_t size(const std::string_view &path) noexcept = 0;
+  /// \brief Checks if a file or directory exists
+  /// \param path The path to check
+  /// \return true if exists, false otherwise
+  virtual bool is_exists(const std::string_view &path) const noexcept = 0;
 
+  /// \brief Checks if the given path is a directory
+  /// \param path The path to check
+  /// \return true if directory, false otherwise
+  virtual bool is_directory(const std::string_view &path) const noexcept = 0;
+
+  /// \brief Gets the size of a file
+  /// \param path The file path
+  /// \return Size in bytes, 0 if file doesn't exist or is directory
+  virtual std::uint64_t size(const std::string_view &path) const noexcept = 0;
+
+  /// \brief Lists all files in the given directory
+  /// \param path The directory path to list
+  /// \return Vector of file/directory names, empty if path doesn't exist or is not a directory
+  /// \throws core::io_error if there's an I/O error accessing the directory
   virtual std::vector<std::string> list_files(const std::string_view &path) = 0;
 
   template <typename F> //

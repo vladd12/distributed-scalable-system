@@ -1,6 +1,5 @@
 #pragma once
 
-#include <boost/system/error_code.hpp>
 #include <fs/file_system.hpp>
 
 namespace fs
@@ -9,10 +8,6 @@ namespace fs
 class local_file_system final : public file_system
 {
 private:
-  boost::system::error_code m_error;
-
-  void logging_error();
-
   std::vector<std::string> get_directory_files(const std::string_view &path);
   std::size_t get_hash_for(const std::string_view &path);
   std::string get_lock_file_path_for(const size_t hash);
@@ -26,9 +21,9 @@ public:
   bool copy(const std::string_view &src, const std::string_view &dst) override;
   bool move(const std::string_view &src, const std::string_view &dst) override;
 
-  bool is_exists(const std::string_view &path) noexcept override;
-  bool is_directory(const std::string_view &path) noexcept override;
-  std::uint64_t size(const std::string_view &path) noexcept override;
+  bool is_exists(const std::string_view &path) const noexcept override;
+  bool is_directory(const std::string_view &path) const noexcept override;
+  std::uint64_t size(const std::string_view &path) const noexcept override;
 
   std::vector<std::string> list_files(const std::string_view &path) override;
 
