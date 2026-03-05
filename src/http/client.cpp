@@ -1,4 +1,4 @@
-#include "http/http_client.hpp"
+#include "http/client.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -125,10 +125,10 @@ void client_session::do_write_request()
 {
   auto self = shared_from_this();
   asio::async_write(m_socket, asio::buffer(m_request_data),
-      [self](boost::system::error_code ec, std::size_t) { self->on_write_request(ec); });
+      [self](boost::system::error_code ec, std::size_t bytes) { self->on_write_request(ec, bytes); });
 }
 
-void client_session::on_write_request(boost::system::error_code ec)
+void client_session::on_write_request(boost::system::error_code ec, std::size_t /*bytes_transferred*/)
 {
   if (ec)
   {
@@ -212,10 +212,10 @@ void client_session::do_read_body()
   auto self = shared_from_this();
   std::size_t remaining = m_content_length - m_response.body.size();
   asio::async_read(m_socket, m_buffer, asio::transfer_exactly(remaining),
-      [self](boost::system::error_code ec, std::size_t) { self->on_body_read(ec); });
+      [self](boost::system::error_code ec, std::size_t bytes) { self->on_body_read(ec, bytes); });
 }
 
-void client_session::on_body_read(boost::system::error_code ec)
+void client_session::on_body_read(boost::system::error_code ec, std::size_t /*bytes_transferred*/)
 {
   if (ec)
   {
