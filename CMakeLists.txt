@@ -50,6 +50,7 @@ set(DCS_DAEMON_HEADERS
   "${DCS_SOURCES_DIR}/fs/file_system_provider.hpp"
 
   "${DCS_SOURCES_DIR}/http/common.hpp"
+  "${DCS_SOURCES_DIR}/http/request.hpp"
   "${DCS_SOURCES_DIR}/http/server.hpp"
   "${DCS_SOURCES_DIR}/http/client.hpp"
 )

@@ -1,29 +1,18 @@
 #pragma once
 
 #include <http/common.hpp>
+#include <http/request.hpp>
 //
 #include <boost/asio.hpp>
 #include <boost/noncopyable.hpp>
 #include <functional>
 #include <memory>
-#include <string>
-#include <unordered_map>
 
 namespace http
 {
 
 namespace asio = boost::asio;
 using tcp = asio::ip::tcp;
-
-/// \brief Represents a parsed HTTP request.
-struct request
-{
-  method method_type = method::UNKNOWN;
-  std::string path;
-  std::string version;
-  std::unordered_map<std::string, std::string> headers;
-  std::string body;
-};
 
 /// \brief Represents an HTTP response to be sent back to the client.
 struct response
