@@ -2,6 +2,7 @@
 
 #include <http/common.hpp>
 #include <http/request.hpp>
+#include <http/response.hpp>
 //
 #include <boost/asio.hpp>
 #include <boost/noncopyable.hpp>
@@ -13,23 +14,6 @@ namespace http
 
 namespace asio = boost::asio;
 using tcp = asio::ip::tcp;
-
-/// \brief Represents an HTTP response to be sent back to the client.
-struct response
-{
-  unsigned int status_code = 200;
-  std::unordered_map<std::string, std::string> headers;
-  std::string body;
-
-  /// \brief Serializes the full HTTP response into a string.
-  std::string serialize() const;
-
-  /// \brief Creates a plain text response.
-  static response text(unsigned int code, std::string_view text);
-
-  /// \brief Creates a JSON response.
-  static response json(unsigned int code, std::string_view json_body);
-};
 
 /// \brief Type alias for a request handler function.
 using request_handler = std::function<response(const request &)>;

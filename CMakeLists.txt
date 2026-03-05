@@ -51,6 +51,7 @@ set(DCS_DAEMON_HEADERS
 
   "${DCS_SOURCES_DIR}/http/common.hpp"
   "${DCS_SOURCES_DIR}/http/request.hpp"
+  "${DCS_SOURCES_DIR}/http/response.hpp"
   "${DCS_SOURCES_DIR}/http/server.hpp"
   "${DCS_SOURCES_DIR}/http/client.hpp"
 )
@@ -67,6 +68,7 @@ set(DCS_DAEMON_SOURCES
   "${DCS_SOURCES_DIR}/fs/file_system_provider.cpp"
 
   "${DCS_SOURCES_DIR}/http/common.cpp"
+  "${DCS_SOURCES_DIR}/http/response.cpp"
   "${DCS_SOURCES_DIR}/http/server.cpp"
   "${DCS_SOURCES_DIR}/http/client.cpp"
 
