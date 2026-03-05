@@ -151,7 +151,7 @@ void http_session::do_write()
 // http_server
 // ---------------------------------------------------------------------------
 
-http_server::http_server(asio::io_context &ctx, const std::string &address, std::uint16_t port)
+http_server::http_server(asio::io_context &ctx, const std::string &address, const std::uint16_t port)
     : m_ctx(ctx), m_acceptor(ctx, tcp::endpoint(asio::ip::make_address(address), port))
 {
   m_default_handler = [](const request &) { return response::text(404, "Not Found"); };

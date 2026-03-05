@@ -1,36 +1,17 @@
 #pragma once
 
-#include <http/common.hpp>
+#include <http/response.hpp>
 //
 #include <boost/asio.hpp>
 #include <boost/noncopyable.hpp>
 #include <functional>
 #include <memory>
-#include <string>
-#include <unordered_map>
 
 namespace http
 {
 
 namespace asio = boost::asio;
 using tcp = asio::ip::tcp;
-
-// Reuse method and status_text_for from server, but we also need response parsing
-// We'll reuse the same method enum and helpers, but define our own response structure
-// (or we could reuse the server's response, but it lacks parsing from network data)
-
-/// \brief Represents an HTTP response received from the server.
-struct response
-{
-  unsigned int status_code = 0;
-  std::string status_text;
-  std::string version;
-  std::unordered_map<std::string, std::string> headers;
-  std::string body;
-
-  /// \brief Parses a raw HTTP response from a string (for testing or simple usage).
-  bool parse(const std::string &data);
-};
 
 /// \brief Type alias for the client request completion callback.
 using response_callback = std::function<void(boost::system::error_code, response)>;

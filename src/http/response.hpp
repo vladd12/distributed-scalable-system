@@ -11,6 +11,7 @@ namespace http
 struct response
 {
   unsigned int status_code = 200;
+  std::string version;
   std::unordered_map<std::string, std::string> headers;
   std::string body;
 
@@ -18,10 +19,13 @@ struct response
   std::string serialize() const;
 
   /// \brief Creates a plain text response.
-  static response text(unsigned int code, std::string_view text);
+  static response text(unsigned int code, const std::string_view &text);
 
   /// \brief Creates a JSON response.
-  static response json(unsigned int code, std::string_view json_body);
+  static response json(unsigned int code, const std::string_view &json_body);
+
+  /// \brief Parses a raw HTTP response from a string (for testing or simple usage).
+  static response parse(const std::string &data);
 };
 
 } // namespace http

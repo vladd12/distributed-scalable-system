@@ -8,61 +8,6 @@ namespace http
 {
 
 // ---------------------------------------------------------------------------
-// response
-// ---------------------------------------------------------------------------
-
-bool response::parse(const std::string &data)
-{
-  std::istringstream stream(data);
-  std::string line;
-
-  // Status line: HTTP/1.1 200 OK
-  if (!std::getline(stream, line))
-    return false;
-  if (!line.empty() && line.back() == '\r')
-    line.pop_back();
-
-  std::istringstream status_line(line);
-  if (!(status_line >> version >> status_code))
-    return false;
-  std::getline(status_line, status_text); // the rest is the reason phrase
-  if (!status_text.empty() && status_text.front() == ' ')
-    status_text.erase(0, 1);
-
-  // Headers
-  while (std::getline(stream, line))
-  {
-    if (!line.empty() && line.back() == '\r')
-      line.pop_back();
-    if (line.empty())
-      break;
-
-    auto colon = line.find(':');
-    if (colon == std::string::npos)
-      continue;
-
-    std::string key = line.substr(0, colon);
-    std::string value = line.substr(colon + 1);
-
-    // Lowercase key for case-insensitive lookup
-    std::transform(key.begin(), key.end(), key.begin(), [](unsigned char c) { return std::tolower(c); });
-
-    // Trim leading whitespace from value
-    if (auto pos = value.find_first_not_of(' '); pos != std::string::npos)
-      value = value.substr(pos);
-
-    headers[std::move(key)] = std::move(value);
-  }
-
-  // Body (rest of stream)
-  std::ostringstream body_stream;
-  body_stream << stream.rdbuf();
-  body = body_stream.str();
-
-  return true;
-}
-
-// ---------------------------------------------------------------------------
 // client_session
 // ---------------------------------------------------------------------------
 
@@ -166,11 +111,15 @@ void client_session::on_headers_read(boost::system::error_code ec, std::size_t /
       break;
   }
 
+  m_response = std::move(response::parse(headers_str));
+  /// TODO: must be try-catch construction here to avoid errors due parsing response
+  /*
   if (!m_response.parse(headers_str))
   {
     finish(boost::asio::error::invalid_argument);
     return;
   }
+  */
 
   // Determine content length
   auto it = m_response.headers.find("content-length");
