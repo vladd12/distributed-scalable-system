@@ -1,4 +1,4 @@
-#include "config/configuration_v1.hpp"
+#include "config/configuration.hpp"
 
 #include <nlohmann/json.hpp>
 

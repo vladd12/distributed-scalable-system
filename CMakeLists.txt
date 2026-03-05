@@ -34,7 +34,7 @@ set(DCS_DAEMON_HEADERS
   "${DCS_SOURCES_DIR}/core/logger.hpp"
   "${DCS_SOURCES_DIR}/core/sys_api.hpp"
 
-  "${DCS_SOURCES_DIR}/config/configuration_v1.hpp"
+  "${DCS_SOURCES_DIR}/config/configuration.hpp"
 
   "${DCS_SOURCES_DIR}/config/json/fixed_string.hpp"
   "${DCS_SOURCES_DIR}/config/json/json_field_base.hpp"
@@ -55,7 +55,7 @@ set(DCS_DAEMON_SOURCES
   "${DCS_SOURCES_DIR}/core/cmd_line_args.cpp"
   "${DCS_SOURCES_DIR}/core/logger.cpp"
 
-  "${DCS_SOURCES_DIR}/config/configuration_v1.cpp"
+  "${DCS_SOURCES_DIR}/config/configuration.cpp"
 
   "${DCS_SOURCES_DIR}/dfs/name_node.cpp"
 

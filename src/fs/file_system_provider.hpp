@@ -1,6 +1,6 @@
 #pragma once
 
-#include <config/configuration_v1.hpp>
+#include <config/configuration.hpp>
 #include <fs/file_system.hpp>
 #include <unordered_map>
 

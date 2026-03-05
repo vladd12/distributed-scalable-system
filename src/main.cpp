@@ -1,4 +1,4 @@
-#include <config/configuration_v1.hpp>
+#include <config/configuration.hpp>
 #include <core/cmd_line_args.hpp>
 #include <core/errors.hpp>
 #include <core/logger.hpp>
