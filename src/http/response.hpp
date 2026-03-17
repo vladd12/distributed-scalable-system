@@ -1,8 +1,6 @@
 #pragma once
 
 #include <http/common.hpp>
-#include <string>
-#include <unordered_map>
 
 namespace http
 {
@@ -12,7 +10,7 @@ struct response
 {
   unsigned int status_code = 200;
   std::string version;
-  std::unordered_map<std::string, std::string> headers;
+  headers_t headers;
   std::string body;
 
   /// \brief Serializes the full HTTP response into a string.

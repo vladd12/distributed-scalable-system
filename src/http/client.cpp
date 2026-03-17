@@ -1,7 +1,5 @@
 #include "http/client.hpp"
 
-#include <algorithm>
-#include <cctype>
 #include <sstream>
 
 namespace http
@@ -11,33 +9,22 @@ namespace http
 // client_session
 // ---------------------------------------------------------------------------
 
-client_session::pointer client_session::create(asio::io_context &io_context, const std::string &host,
-    const std::string &port, const std::string &req, response_callback handler)
+client_session::pointer client_session::create(asio::io_context &io_context)
 {
-  return pointer(new client_session(io_context, host, port, req, std::move(handler)));
+  return client_session::pointer(new client_session(io_context));
 }
 
-client_session::client_session(asio::io_context &io_context, const std::string &host, const std::string &port,
-    const std::string &req, response_callback handler)
-    : m_socket(io_context)
-    , m_resolver(io_context)
-    , m_host(host)
-    , m_port(port)
-    , m_request_data(req)
-    , m_handler(std::move(handler))
+client_session::client_session(asio::io_context &io_context) : m_socket(io_context), m_resolver(io_context)
 {
 }
 
-void client_session::start()
-{
-  do_resolve();
-}
-
-void client_session::do_resolve()
+void client_session::connect(const std::string &host, const std::uint16_t port)
 {
   auto self = shared_from_this();
-  m_resolver.async_resolve(m_host, m_port,
-      [self](boost::system::error_code ec, tcp::resolver::results_type results) { self->on_resolve(ec, results); });
+  m_resolver.async_resolve(host, std::to_string(port), //
+      [self](boost::system::error_code ec, tcp::resolver::results_type results) {
+        self->on_resolve(ec, results); //
+      });
 }
 
 void client_session::on_resolve(boost::system::error_code ec, tcp::resolver::results_type results)
@@ -63,13 +50,13 @@ void client_session::on_connect(boost::system::error_code ec)
     finish(ec);
     return;
   }
-  do_write_request();
 }
 
-void client_session::do_write_request()
+void client_session::write(const request &req, response_callback handler)
 {
+  m_handler = std::move(handler); /// TODO: session works only with one request... looks bad
   auto self = shared_from_this();
-  asio::async_write(m_socket, asio::buffer(m_request_data),
+  asio::async_write(m_socket, asio::buffer(req.serialize()),
       [self](boost::system::error_code ec, std::size_t bytes) { self->on_write_request(ec, bytes); });
 }
 
@@ -194,73 +181,42 @@ void client_session::finish(boost::system::error_code ec)
 // http_client
 // ---------------------------------------------------------------------------
 
-http_client::http_client(asio::io_context &ctx) : m_ctx(ctx)
+http_client::http_client(asio::io_context &ctx, const std::string &host, const std::uint16_t port)
+    : m_ctx(ctx), m_host(host), m_session(client_session::create(ctx))
 {
+  m_session->connect(host, port);
 }
 
-void http_client::async_get(const std::string &host, const std::string &port, const std::string &path,
-    const std::unordered_map<std::string, std::string> &headers, response_callback handler)
+void http_client::get(const std::string &path, const headers_t &headers, response_callback handler)
 {
-  async_request(method::GET, host, port, path, headers, "", std::move(handler));
+  request req { method::GET, path, "HTTP/1.1", headers };
+  async_request(std::move(req), std::move(handler));
 }
 
-void http_client::async_post(const std::string &host, const std::string &port, const std::string &path,
-    const std::unordered_map<std::string, std::string> &headers, const std::string &body, response_callback handler)
+void http_client::post(
+    const std::string &path, const headers_t &headers, const std::string &body, response_callback handler)
 {
-  async_request(method::POST, host, port, path, headers, body, std::move(handler));
+  request req { method::POST, path, "HTTP/1.1", headers, body };
+  async_request(std::move(req), std::move(handler));
 }
 
-void http_client::async_put(const std::string &host, const std::string &port, const std::string &path,
-    const std::unordered_map<std::string, std::string> &headers, const std::string &body, response_callback handler)
+void http_client::put(
+    const std::string &path, const headers_t &headers, const std::string &body, response_callback handler)
 {
-  async_request(method::PUT, host, port, path, headers, body, std::move(handler));
+  request req { method::PUT, path, "HTTP/1.1", headers, body };
+  async_request(std::move(req), std::move(handler));
 }
 
-void http_client::async_delete(const std::string &host, const std::string &port, const std::string &path,
-    const std::unordered_map<std::string, std::string> &headers, response_callback handler)
+void http_client::delete_(const std::string &path, const headers_t &headers, response_callback handler)
 {
-  async_request(method::DELETE_, host, port, path, headers, "", std::move(handler));
+  request req { method::DELETE_, path, "HTTP/1.1", headers };
+  async_request(std::move(req), std::move(handler));
 }
 
-void http_client::async_request(method m, const std::string &host, const std::string &port, const std::string &path,
-    const std::unordered_map<std::string, std::string> &headers, const std::string &body, response_callback handler)
+void http_client::async_request(request req, response_callback handler)
 {
-  std::string request_data = build_request(m, host, path, headers, body);
-  auto session = client_session::create(m_ctx, host, port, request_data, std::move(handler));
-  session->start();
-}
-
-std::string http_client::build_request(method m, const std::string &host, const std::string &path,
-    const std::unordered_map<std::string, std::string> &headers, const std::string &body) const
-{
-  std::ostringstream req;
-  req << method_to_string(m) << ' ' << path << " HTTP/1.1\r\n";
-  req << "Host: " << host << "\r\n";
-
-  bool has_connection = false;
-  bool has_content_length = false;
-  for (const auto &[key, value] : headers)
-  {
-    req << key << ": " << value << "\r\n";
-    std::string lkey = key;
-    std::transform(lkey.begin(), lkey.end(), lkey.begin(), [](unsigned char c) { return std::tolower(c); });
-    if (lkey == "connection")
-      has_connection = true;
-    if (lkey == "content-length")
-      has_content_length = true;
-  }
-
-  if (!has_connection)
-    req << "Connection: close\r\n"; // Simple: close after each request
-
-  if (!has_content_length && !body.empty())
-    req << "Content-Length: " << body.size() << "\r\n";
-
-  req << "\r\n";
-  if (!body.empty())
-    req << body;
-
-  return req.str();
+  req.headers["Host"] = m_host;
+  m_session->write(req, std::move(handler));
 }
 
 } // namespace http

@@ -51,9 +51,8 @@ class http_server : public boost::noncopyable
 public:
   /// \brief Constructs the server and begins accepting connections.
   /// \param ctx  The io_context that drives async operations.
-  /// \param address  The address to bind to (e.g. "0.0.0.0").
   /// \param port  The TCP port to listen on.
-  explicit http_server(asio::io_context &ctx, const std::string &address, const uint16_t port);
+  explicit http_server(asio::io_context &ctx, const std::uint16_t port);
 
   /// \brief Registers a handler for a specific HTTP method and path.
   void route(method m, const std::string &path, request_handler handler);

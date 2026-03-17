@@ -1,6 +1,8 @@
 #pragma once
 
+#include <string>
 #include <string_view>
+#include <unordered_map>
 
 namespace http
 {
@@ -26,5 +28,7 @@ std::string_view method_to_string(const method m);
 
 /// \brief Returns a standard reason phrase for the given HTTP status code.
 std::string_view status_text_for(const unsigned int code);
+
+using headers_t = std::unordered_map<std::string, std::string>;
 
 } // namespace http

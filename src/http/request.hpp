@@ -1,8 +1,6 @@
 #pragma once
 
 #include <http/common.hpp>
-#include <string>
-#include <unordered_map>
 
 namespace http
 {
@@ -13,8 +11,11 @@ struct request
   method method_type = method::UNKNOWN;
   std::string path;
   std::string version;
-  std::unordered_map<std::string, std::string> headers;
+  headers_t headers;
   std::string body;
+
+  /// \brief Serializes the full HTTP request into a string.
+  std::string serialize() const;
 };
 
 } // namespace http
