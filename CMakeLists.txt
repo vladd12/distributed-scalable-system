@@ -71,16 +71,41 @@ set(DCS_DAEMON_SOURCES
   "${DCS_SOURCES_DIR}/http/response.cpp"
   "${DCS_SOURCES_DIR}/http/server.cpp"
   "${DCS_SOURCES_DIR}/http/client.cpp"
-
-  "${DCS_SOURCES_DIR}/main.cpp"
 )
 
 # Creating executable target
-add_executable(dcs-daemon ${DCS_DAEMON_HEADERS} ${DCS_DAEMON_SOURCES})
+add_executable(dcs-daemon ${DCS_DAEMON_HEADERS} ${DCS_DAEMON_SOURCES} "${DCS_SOURCES_DIR}/main.cpp")
 
 target_include_directories(dcs-daemon PRIVATE "${DCS_SOURCES_DIR}")
+target_compile_definitions(dcs-daemon PRIVATE _WIN32_WINNT=0x0601)
 
 target_link_libraries(dcs-daemon PRIVATE
+  Boost::program_options
+  Boost::filesystem
+  Boost::iostreams
+  fmt::fmt
+  spdlog::spdlog
+  nlohmann_json::nlohmann_json
+)
+
+# Creating executable target
+add_executable(dcs-client ${DCS_DAEMON_HEADERS} ${DCS_DAEMON_SOURCES} "${DCS_SOURCES_DIR}/client.cpp")
+target_include_directories(dcs-client PRIVATE "${DCS_SOURCES_DIR}")
+target_compile_definitions(dcs-client PRIVATE _WIN32_WINNT=0x0601)
+target_link_libraries(dcs-client PRIVATE
+  Boost::program_options
+  Boost::filesystem
+  Boost::iostreams
+  fmt::fmt
+  spdlog::spdlog
+  nlohmann_json::nlohmann_json
+)
+
+# Creating executable target
+add_executable(dcs-server ${DCS_DAEMON_HEADERS} ${DCS_DAEMON_SOURCES} "${DCS_SOURCES_DIR}/server.cpp")
+target_include_directories(dcs-server PRIVATE "${DCS_SOURCES_DIR}")
+target_compile_definitions(dcs-server PRIVATE _WIN32_WINNT=0x0601)
+target_link_libraries(dcs-server PRIVATE
   Boost::program_options
   Boost::filesystem
   Boost::iostreams
