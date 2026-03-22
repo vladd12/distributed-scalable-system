@@ -52,10 +52,9 @@ response response::json(unsigned int code, const std::string_view &json_body)
   return resp;
 }
 
-response response::parse(const std::string &data)
+response response::parse(std::istream &stream)
 {
   response resp;
-  std::istringstream stream(data);
   std::string line;
 
   // Status line parsing, example: "HTTP/1.1 200 OK"
@@ -73,6 +72,7 @@ response response::parse(const std::string &data)
   {
     if (!line.empty() && line.back() == '\r')
       line.pop_back();
+
     if (line.empty())
       break;
 
@@ -99,6 +99,12 @@ response response::parse(const std::string &data)
   resp.body = body_stream.str();
 
   return resp;
+}
+
+response response::parse(const std::string &data)
+{
+  std::istringstream stream(data);
+  return response::parse(stream);
 }
 
 } // namespace http

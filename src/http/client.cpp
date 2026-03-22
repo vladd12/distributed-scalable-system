@@ -1,7 +1,5 @@
 #include "http/client.hpp"
 
-#include <sstream>
-
 constexpr inline bool use_async = false;
 
 namespace http
@@ -71,7 +69,7 @@ void client_session::on_connect(boost::system::error_code ec)
 void client_session::write(const request &req, response_callback handler)
 {
   m_handler = std::move(handler); /// TODO: session works only with one request... looks bad
-  m_request = req.serialize();
+  m_request = std::move(req.serialize());
   asio::const_buffer request_buffer(m_request.data(), m_request.size());
   auto self = shared_from_this();
   asio::async_write(m_socket, request_buffer,
@@ -85,105 +83,51 @@ void client_session::on_write_request(boost::system::error_code ec, std::size_t 
     finish(ec);
     return;
   }
-  do_read_headers();
+  read_all();
 }
 
-void client_session::do_read_headers()
+void client_session::read_all()
 {
   auto self = shared_from_this();
-  asio::async_read_until(
-      m_socket, m_buffer, "\r\n\r\n", [self](boost::system::error_code ec, std::size_t bytes_transferred) {
-        self->on_headers_read(ec, bytes_transferred);
+  asio::async_read(
+      m_socket, m_buffer, asio::transfer_all(), [self](boost::system::error_code ec, std::size_t bytes_transferred) {
+        self->on_request_parse(ec, bytes_transferred);
       });
 }
 
-void client_session::on_headers_read(boost::system::error_code ec, std::size_t /*bytes*/)
+void client_session::on_request_parse(boost::system::error_code ec, std::size_t bytes_transferred)
 {
-  if (ec)
+  if (ec && ec != asio::error::eof)
   {
     finish(ec);
     return;
   }
 
-  // Extract headers from buffer
-  std::istream stream(&m_buffer);
-  std::string line;
-  std::string headers_str;
-  while (std::getline(stream, line))
+  try
   {
-    headers_str += line + "\n";
-    if (line == "\r" || line.empty())
-      break;
-  }
+    std::istream stream(&m_buffer);
+    m_response = std::move(response::parse(stream));
 
-  m_response = std::move(response::parse(headers_str));
-  /// TODO: must be try-catch construction here to avoid errors due parsing response
-  /*
-  if (!m_response.parse(headers_str))
+    // Determine content length
+    auto it = m_response.headers.find("content-length");
+    if (it != m_response.headers.end())
+    {
+      m_content_length = std::stoul(it->second);
+      m_keep_alive = true; // assume keep-alive if content-length present
+    }
+    else
+    {
+      // No content-length, read until connection close
+      m_content_length = 0;
+      m_keep_alive = false;
+    }
+
+    ec = boost::system::error_code();
+  } catch (...)
   {
-    finish(boost::asio::error::invalid_argument);
-    return;
+    ec = asio::error::invalid_argument;
   }
-  */
-
-  // Determine content length
-  auto it = m_response.headers.find("content-length");
-  if (it != m_response.headers.end())
-  {
-    m_content_length = std::stoul(it->second);
-    m_keep_alive = true; // assume keep-alive if content-length present
-  }
-  else
-  {
-    // No content-length, read until connection close
-    m_content_length = 0;
-    m_keep_alive = false;
-  }
-
-  // Check if we already have some body data in the buffer
-  std::size_t buffered = m_buffer.size();
-  if (buffered > 0)
-  {
-    std::ostringstream body_buf;
-    body_buf << stream.rdbuf(); // read remaining buffered data
-    m_response.body = body_buf.str();
-  }
-
-  if (m_content_length > 0 && m_response.body.size() < m_content_length)
-  {
-    // Need to read more body
-    do_read_body();
-  }
-  else
-  {
-    // Body complete or none expected
-    finish(boost::system::error_code());
-  }
-}
-
-void client_session::do_read_body()
-{
-  auto self = shared_from_this();
-  std::size_t remaining = m_content_length - m_response.body.size();
-  asio::async_read(m_socket, m_buffer, asio::transfer_exactly(remaining),
-      [self](boost::system::error_code ec, std::size_t bytes) { self->on_body_read(ec, bytes); });
-}
-
-void client_session::on_body_read(boost::system::error_code ec, std::size_t /*bytes_transferred*/)
-{
-  if (ec)
-  {
-    finish(ec);
-    return;
-  }
-
-  // Extract remaining body from buffer
-  std::istream stream(&m_buffer);
-  std::ostringstream body_buf;
-  body_buf << stream.rdbuf();
-  m_response.body += body_buf.str();
-
-  finish(boost::system::error_code());
+  finish(ec);
 }
 
 void client_session::finish(boost::system::error_code ec)
@@ -237,6 +181,7 @@ void http_client::delete_(const std::string &path, const headers_t &headers, res
 void http_client::async_request(request req, response_callback handler)
 {
   req.headers["Host"] = m_host;
+  req.headers["Connection"] = "Keep-Alive"; // HTTP 1.1 specific
   m_session->write(req, std::move(handler));
 }
 

@@ -48,10 +48,9 @@ private:
   void on_connect(boost::system::error_code ec);
 
   void on_write_request(boost::system::error_code ec, std::size_t bytes_transferred);
-  void do_read_headers();
-  void on_headers_read(boost::system::error_code ec, std::size_t bytes_transferred);
-  void do_read_body();
-  void on_body_read(boost::system::error_code ec, std::size_t bytes_transferred);
+
+  void read_all();
+  void on_request_parse(boost::system::error_code ec, std::size_t bytes_transferred);
 
   void finish(boost::system::error_code ec);
 
