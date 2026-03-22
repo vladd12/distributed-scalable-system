@@ -91,11 +91,11 @@ void client_session::read_all()
   auto self = shared_from_this();
   asio::async_read(
       m_socket, m_buffer, asio::transfer_all(), [self](boost::system::error_code ec, std::size_t bytes_transferred) {
-        self->on_request_parse(ec, bytes_transferred);
+        self->on_response_parse(ec, bytes_transferred);
       });
 }
 
-void client_session::on_request_parse(boost::system::error_code ec, std::size_t bytes_transferred)
+void client_session::on_response_parse(boost::system::error_code ec, std::size_t bytes_transferred)
 {
   if (ec && ec != asio::error::eof)
   {

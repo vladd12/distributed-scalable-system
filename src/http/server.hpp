@@ -25,7 +25,7 @@ public:
   using pointer = std::shared_ptr<http_session>;
 
   /// \brief Creates a new session from an accepted socket.
-  static pointer create(tcp::socket socket, request_handler handler);
+  [[nodiscard]] static pointer create(tcp::socket socket, request_handler handler);
 
   /// \brief Starts reading the request from the socket.
   void start();
@@ -34,10 +34,9 @@ private:
   http_session(tcp::socket socket, request_handler handler);
 
   void do_read();
-  void on_headers_read(boost::system::error_code ec, std::size_t bytes_transferred);
+  void on_request_parse(boost::system::error_code ec, std::size_t bytes_transferred);
   void process_request();
   void do_write();
-  bool parse_request();
 
   tcp::socket m_socket;
   request_handler m_handler;

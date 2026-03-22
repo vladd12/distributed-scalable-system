@@ -23,7 +23,7 @@ struct response
   /// \brief Creates a JSON response.
   static response json(unsigned int code, const std::string_view &json_body);
 
-  /// \brief Parses a raw HTTP response from a input stream.
+  /// \brief Parses a raw HTTP response from an input stream.
   static response parse(std::istream &stream);
 
   /// \brief Parses a raw HTTP response from a string (for testing or simple usage).

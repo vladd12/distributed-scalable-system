@@ -1,8 +1,5 @@
 #include "http/server.hpp"
 
-#include <algorithm>
-#include <sstream>
-
 namespace http
 {
 
@@ -28,111 +25,38 @@ void http_session::start()
 void http_session::do_read()
 {
   auto self = shared_from_this();
-  asio::async_read_until(
-      m_socket, m_buffer, "\r\n\r\n", [self](boost::system::error_code ec, std::size_t bytes_transferred) {
-        self->on_headers_read(ec, bytes_transferred);
+  asio::async_read(
+      m_socket, m_buffer, asio::transfer_all(), [self](boost::system::error_code ec, std::size_t bytes_transferred) {
+        self->on_request_parse(ec, bytes_transferred);
       });
 }
 
-void http_session::on_headers_read(boost::system::error_code ec, std::size_t /*bytes_transferred*/)
+void http_session::on_request_parse(boost::system::error_code ec, std::size_t bytes_transferred)
 {
-  if (ec)
+  if (ec && ec != asio::error::eof)
     return;
 
-  if (!parse_request())
+  try
+  {
+    std::istream stream(&m_buffer);
+    m_request = std::move(request::parse(stream));
+    process_request();
+  } catch (...) /// TODO: realize that we must catch defferent errors from different parts of application
   {
     m_response_data = response::text(400, "Bad Request").serialize();
-    do_write();
-    return;
   }
-
-  // Check whether a request body is expected.
-  auto it = m_request.headers.find("content-length");
-  if (it != m_request.headers.end())
-  {
-    std::size_t content_length = std::stoul(it->second);
-    std::size_t already_buffered = m_buffer.size();
-
-    if (already_buffered >= content_length)
-    {
-      std::istream stream(&m_buffer);
-      m_request.body.resize(content_length);
-      stream.read(m_request.body.data(), static_cast<std::streamsize>(content_length));
-      process_request();
-    }
-    else
-    {
-      std::size_t remaining = content_length - already_buffered;
-      auto self = shared_from_this();
-      asio::async_read(m_socket, m_buffer, asio::transfer_exactly(remaining),
-          [self, content_length](boost::system::error_code ec, std::size_t) {
-            if (ec)
-              return;
-            std::istream stream(&self->m_buffer);
-            self->m_request.body.resize(content_length);
-            stream.read(self->m_request.body.data(), static_cast<std::streamsize>(content_length));
-            self->process_request();
-          });
-    }
-  }
-  else
-  {
-    process_request();
-  }
+  do_write();
 }
 
 void http_session::process_request()
 {
-  m_response_data = m_handler(m_request).serialize();
-  do_write();
-}
-
-bool http_session::parse_request()
-{
-  std::istream stream(&m_buffer);
-  std::string line;
-
-  // Request line: METHOD PATH VERSION
-  if (!std::getline(stream, line))
-    return false;
-  if (!line.empty() && line.back() == '\r')
-    line.pop_back();
-
-  std::istringstream request_line(line);
-  std::string method_str, path, version;
-  if (!(request_line >> method_str >> path >> version))
-    return false;
-
-  m_request.method_type = string_to_method(method_str);
-  m_request.path = std::move(path);
-  m_request.version = std::move(version);
-
-  // Headers
-  while (std::getline(stream, line))
+  try
   {
-    if (!line.empty() && line.back() == '\r')
-      line.pop_back();
-    if (line.empty())
-      break;
-
-    auto colon = line.find(':');
-    if (colon == std::string::npos)
-      continue;
-
-    std::string key = line.substr(0, colon);
-    std::string value = line.substr(colon + 1);
-
-    // Lowercase the key for case-insensitive lookup
-    std::transform(key.begin(), key.end(), key.begin(), [](unsigned char c) { return std::tolower(c); });
-
-    // Trim leading whitespace from value
-    if (auto pos = value.find_first_not_of(' '); pos != std::string::npos)
-      value = value.substr(pos);
-
-    m_request.headers[std::move(key)] = std::move(value);
+    m_response_data = std::move(m_handler(m_request).serialize());
+  } catch (...) /// TODO: Logic exceptions must be here
+  {
+    m_response_data = response::text(500, "Internal Server Error").serialize();
   }
-
-  return true;
 }
 
 void http_session::do_write()

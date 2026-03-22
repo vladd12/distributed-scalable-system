@@ -27,11 +27,11 @@ public:
 
   /// \brief Creates a new client session.
   /// \param io_context The io_context for asynchronous operations.
-  /// \param host Remote host (domain or IP).
-  /// \param port Remote port (e.g., "80").
-  static pointer create(asio::io_context &io_context);
+  [[nodiscard]] static pointer create(asio::io_context &io_context);
 
   /// \brief Starts the asynchronous operation: resolve and connect to the host on specified port.
+  /// \param host Remote host (domain or IP).
+  /// \param port Remote port (e.g., "80").
   void async_connect(const std::string &host, const std::uint16_t port);
 
   /// \brief   Starts the synchronous operation: resolve and connect to the host on specified port.
@@ -50,7 +50,7 @@ private:
   void on_write_request(boost::system::error_code ec, std::size_t bytes_transferred);
 
   void read_all();
-  void on_request_parse(boost::system::error_code ec, std::size_t bytes_transferred);
+  void on_response_parse(boost::system::error_code ec, std::size_t bytes_transferred);
 
   void finish(boost::system::error_code ec);
 

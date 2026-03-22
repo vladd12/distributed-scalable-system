@@ -1,6 +1,7 @@
 #include "http/request.hpp"
 
 #include <algorithm>
+#include <core/errors.hpp>
 #include <sstream>
 
 namespace http
@@ -35,6 +36,65 @@ std::string request::serialize() const
     req << body;
 
   return req.str();
+}
+
+request request::parse(std::istream &stream)
+{
+  request req;
+  std::string line;
+
+  // Request line: METHOD PATH VERSION
+  if (!std::getline(stream, line))
+    throw core::http_error("response parsing error: empty response");
+
+  if (!line.empty() && line.back() == '\r')
+    line.pop_back();
+
+  std::istringstream request_line(line);
+  std::string method_str;
+  if (!(request_line >> method_str >> req.path >> req.version))
+    throw core::http_error("response parsing error: invalid status line");
+
+  req.method_type = string_to_method(method_str);
+
+  // Headers
+  while (std::getline(stream, line))
+  {
+    if (!line.empty() && line.back() == '\r')
+      line.pop_back();
+
+    if (line.empty())
+      break;
+
+    auto colon = line.find(':');
+    if (colon == std::string::npos)
+      continue;
+
+    std::string key = line.substr(0, colon);
+    std::string value = line.substr(colon + 1);
+
+    // Lowercase the key for case-insensitive lookup
+    std::transform(key.begin(), key.end(), key.begin(), [](unsigned char c) { return std::tolower(c); });
+
+    // Trim leading whitespace from value
+    if (auto pos = value.find_first_not_of(' '); pos != std::string::npos)
+      value = value.substr(pos);
+
+    req.headers[std::move(key)] = std::move(value);
+  }
+
+  // Body parsing (rest of stream)
+  std::ostringstream body_stream;
+  body_stream << stream.rdbuf();
+  req.body = body_stream.str();
+
+  return req;
+}
+
+request request::parse(const std::string &data)
+{
+  std::istringstream stream(data);
+  return request::parse(stream);
 }
 
 } // namespace http
