@@ -64,7 +64,6 @@ private:
   void do_accept();
   response dispatch(const request &req);
 
-  asio::io_context &m_ctx;
   tcp::acceptor m_acceptor;
 
   struct route_key

@@ -2,6 +2,8 @@
 
 #include <sstream>
 
+constexpr inline bool use_async = false;
+
 namespace http
 {
 
@@ -18,13 +20,27 @@ client_session::client_session(asio::io_context &io_context) : m_socket(io_conte
 {
 }
 
-void client_session::connect(const std::string &host, const std::uint16_t port)
+void client_session::async_connect(const std::string &host, const std::uint16_t port)
 {
   auto self = shared_from_this();
   m_resolver.async_resolve(host, std::to_string(port), //
       [self](boost::system::error_code ec, tcp::resolver::results_type results) {
         self->on_resolve(ec, results); //
       });
+}
+
+void client_session::sync_connect(const std::string &host, const std::uint16_t port)
+{
+  boost::system::error_code err;
+  tcp::resolver::results_type results = m_resolver.resolve(host, std::to_string(port), err);
+  if (!err)
+    asio::connect(m_socket, results, err);
+
+  if (err)
+  {
+    finish(err);
+    return;
+  }
 }
 
 void client_session::on_resolve(boost::system::error_code ec, tcp::resolver::results_type results)
@@ -55,8 +71,10 @@ void client_session::on_connect(boost::system::error_code ec)
 void client_session::write(const request &req, response_callback handler)
 {
   m_handler = std::move(handler); /// TODO: session works only with one request... looks bad
+  m_request = req.serialize();
+  asio::const_buffer request_buffer(m_request.data(), m_request.size());
   auto self = shared_from_this();
-  asio::async_write(m_socket, asio::buffer(req.serialize()),
+  asio::async_write(m_socket, request_buffer,
       [self](boost::system::error_code ec, std::size_t bytes) { self->on_write_request(ec, bytes); });
 }
 
@@ -182,9 +200,12 @@ void client_session::finish(boost::system::error_code ec)
 // ---------------------------------------------------------------------------
 
 http_client::http_client(asio::io_context &ctx, const std::string &host, const std::uint16_t port)
-    : m_ctx(ctx), m_host(host), m_session(client_session::create(ctx))
+    : m_host(host), m_session(client_session::create(ctx))
 {
-  m_session->connect(host, port);
+  if constexpr (use_async)
+    m_session->async_connect(host, port);
+  else
+    m_session->sync_connect(host, port);
 }
 
 void http_client::get(const std::string &path, const headers_t &headers, response_callback handler)

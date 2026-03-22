@@ -32,7 +32,11 @@ public:
   static pointer create(asio::io_context &io_context);
 
   /// \brief Starts the asynchronous operation: resolve and connect to the host on specified port.
-  void connect(const std::string &host, const std::uint16_t port);
+  void async_connect(const std::string &host, const std::uint16_t port);
+
+  /// \brief   Starts the synchronous operation: resolve and connect to the host on specified port.
+  /// \details This blocked operation for execution thread.
+  void sync_connect(const std::string &host, const std::uint16_t port);
 
   void write(const request &req, response_callback handler);
 
@@ -58,6 +62,7 @@ private:
 
   asio::streambuf m_buffer;
   response m_response;
+  std::string m_request;
   std::size_t m_content_length = 0;
   bool m_keep_alive = false;
 };
@@ -86,7 +91,6 @@ private:
   /// \brief Performs a generic asynchronous HTTP request.
   void async_request(request req, response_callback handler);
 
-  asio::io_context &m_ctx;
   std::string m_host;
   client_session::pointer m_session;
 };
