@@ -25,6 +25,8 @@ class client_session : public std::enable_shared_from_this<client_session>
 public:
   using pointer = std::shared_ptr<client_session>;
 
+  client_session(asio::io_context &io_context);
+
   /// \brief Creates a new client session.
   /// \param io_context The io_context for asynchronous operations.
   [[nodiscard]] static pointer create(asio::io_context &io_context);
@@ -41,8 +43,6 @@ public:
   void write(const request &req, response_callback handler);
 
 private:
-  client_session(asio::io_context &io_context);
-
   void on_resolve(boost::system::error_code ec, tcp::resolver::results_type results);
   void do_connect(tcp::resolver::results_type results);
   void on_connect(boost::system::error_code ec);

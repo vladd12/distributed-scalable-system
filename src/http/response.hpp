@@ -1,16 +1,25 @@
 #pragma once
 
 #include <http/common.hpp>
-#include <iosfwd> // std::istringstream
 
 namespace http
 {
 
-/// \brief Represents an HTTP response to be sent back to the client.
-struct response
+/// \brief Represents a parsed status line from HTTP response.
+struct status_line
 {
   unsigned int status_code = 200;
   std::string version;
+
+  static status_line parse(std::istream &stream);
+};
+
+/// \brief Represents an HTTP response to be sent back to the client.
+struct response
+{
+  status_line line;
+  // unsigned int status_code = 200;
+  // std::string version;
   headers_t headers;
   std::string body;
 

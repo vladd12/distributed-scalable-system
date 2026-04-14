@@ -7,10 +7,29 @@
 namespace http
 {
 
+status_line status_line::parse(std::istream &stream)
+{
+  status_line line;
+  std::string temp_line;
+
+  // Status line parsing, example: "HTTP/1.1 200 OK"
+  if (!std::getline(stream, temp_line))
+    throw core::http_error("response parsing error: empty response");
+
+  if (!temp_line.empty() && temp_line.back() == '\r')
+    temp_line.pop_back();
+
+  std::istringstream _status_line(temp_line);
+  if (!(_status_line >> line.version >> line.status_code))
+    throw core::http_error("response parsing error: invalid status line");
+
+  return line;
+}
+
 std::string response::serialize() const
 {
   std::ostringstream oss;
-  oss << version << ' ' << status_code << ' ' << status_text_for(status_code) << "\r\n";
+  oss << line.version << ' ' << line.status_code << ' ' << status_text_for(line.status_code) << "\r\n";
 
   bool has_content_length = false;
   bool has_connection = false;
@@ -35,8 +54,8 @@ std::string response::serialize() const
 response response::text(unsigned int code, const std::string_view &text)
 {
   response resp;
-  resp.status_code = code;
-  resp.version = "HTTP/1.1";
+  resp.line.status_code = code;
+  resp.line.version = http_version;
   resp.headers["Content-Type"] = "text/plain";
   resp.body = text;
   return resp;
@@ -45,8 +64,8 @@ response response::text(unsigned int code, const std::string_view &text)
 response response::json(unsigned int code, const std::string_view &json_body)
 {
   response resp;
-  resp.status_code = code;
-  resp.version = "HTTP/1.1";
+  resp.line.status_code = code;
+  resp.line.version = http_version;
   resp.headers["Content-Type"] = "application/json";
   resp.body = json_body;
   return resp;
@@ -57,41 +76,8 @@ response response::parse(std::istream &stream)
   response resp;
   std::string line;
 
-  // Status line parsing, example: "HTTP/1.1 200 OK"
-  if (!std::getline(stream, line))
-    throw core::http_error("response parsing error: empty response");
-
-  if (!line.empty() && line.back() == '\r')
-    line.pop_back();
-  std::istringstream status_line(line);
-  if (!(status_line >> resp.version >> resp.status_code))
-    throw core::http_error("response parsing error: invalid status line");
-
-  // Headers parsing, example: "key: value"
-  while (std::getline(stream, line))
-  {
-    if (!line.empty() && line.back() == '\r')
-      line.pop_back();
-
-    if (line.empty())
-      break;
-
-    auto colon = line.find(':');
-    if (colon == std::string::npos)
-      continue;
-
-    std::string key = line.substr(0, colon);
-    std::string value = line.substr(colon + 1);
-
-    // Lowercase key for case-insensitive lookup
-    std::transform(key.begin(), key.end(), key.begin(), [](unsigned char c) { return std::tolower(c); });
-
-    // Trim leading whitespace from value
-    if (auto pos = value.find_first_not_of(' '); pos != std::string::npos)
-      value = value.substr(pos);
-
-    resp.headers[std::move(key)] = std::move(value);
-  }
+  resp.line = std::move(status_line::parse(stream)); // Status line
+  resp.headers = std::move(parse_headers(stream));   // Headers
 
   // Body parsing (rest of stream)
   std::ostringstream body_stream;

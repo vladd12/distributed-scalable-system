@@ -7,10 +7,31 @@
 namespace http
 {
 
+request_line request_line::parse(std::istream &stream)
+{
+  request_line line;
+  std::string temp_line;
+
+  // Request line: METHOD PATH VERSION
+  if (!std::getline(stream, temp_line))
+    throw core::http_error("response parsing error: empty response");
+
+  if (!temp_line.empty() && temp_line.back() == '\r')
+    temp_line.pop_back();
+
+  std::istringstream request_line(temp_line);
+  std::string method_str;
+  if (!(request_line >> method_str >> line.path >> line.version))
+    throw core::http_error("response parsing error: invalid status line");
+
+  line.method_type = string_to_method(method_str);
+  return line;
+}
+
 std::string request::serialize() const
 {
   std::ostringstream req;
-  req << method_to_string(method_type) << ' ' << path << ' ' << version << "\r\n";
+  req << method_to_string(line.method_type) << ' ' << line.path << ' ' << line.version << "\r\n";
 
   bool has_connection = false;
   bool has_content_length = false;
@@ -43,45 +64,8 @@ request request::parse(std::istream &stream)
   request req;
   std::string line;
 
-  // Request line: METHOD PATH VERSION
-  if (!std::getline(stream, line))
-    throw core::http_error("response parsing error: empty response");
-
-  if (!line.empty() && line.back() == '\r')
-    line.pop_back();
-
-  std::istringstream request_line(line);
-  std::string method_str;
-  if (!(request_line >> method_str >> req.path >> req.version))
-    throw core::http_error("response parsing error: invalid status line");
-
-  req.method_type = string_to_method(method_str);
-
-  // Headers
-  while (std::getline(stream, line))
-  {
-    if (!line.empty() && line.back() == '\r')
-      line.pop_back();
-
-    if (line.empty())
-      break;
-
-    auto colon = line.find(':');
-    if (colon == std::string::npos)
-      continue;
-
-    std::string key = line.substr(0, colon);
-    std::string value = line.substr(colon + 1);
-
-    // Lowercase the key for case-insensitive lookup
-    std::transform(key.begin(), key.end(), key.begin(), [](unsigned char c) { return std::tolower(c); });
-
-    // Trim leading whitespace from value
-    if (auto pos = value.find_first_not_of(' '); pos != std::string::npos)
-      value = value.substr(pos);
-
-    req.headers[std::move(key)] = std::move(value);
-  }
+  req.line = std::move(request_line::parse(stream)); // Request line
+  req.headers = std::move(parse_headers(stream));    // Headers
 
   // Body parsing (rest of stream)
   std::ostringstream body_stream;

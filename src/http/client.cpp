@@ -11,7 +11,7 @@ namespace http
 
 client_session::pointer client_session::create(asio::io_context &io_context)
 {
-  return client_session::pointer(new client_session(io_context));
+  return std::make_shared<client_session>(io_context);
 }
 
 client_session::client_session(asio::io_context &io_context) : m_socket(io_context), m_resolver(io_context)

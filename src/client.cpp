@@ -10,7 +10,7 @@ int main(int argc, char *argv[])
       [](boost::system::error_code ec, const http::response &resp) {
         if (ec)
           std::cout << "error code: " << ec.what() << '\n';
-        std::cout << "code: " << resp.status_code << ", body: " << resp.body << '\n';
+        std::cout << "code: " << resp.line.status_code << ", body: " << resp.body << '\n';
       });
 
   ctx.run();

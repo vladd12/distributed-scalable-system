@@ -25,8 +25,8 @@ void http_session::start()
 void http_session::do_read()
 {
   auto self = shared_from_this();
-  asio::async_read(
-      m_socket, m_buffer, asio::transfer_all(), [self](boost::system::error_code ec, std::size_t bytes_transferred) {
+  asio::async_read_until(m_socket, m_buffer, "\r\n\r\n", //
+      [self](boost::system::error_code ec, std::size_t bytes_transferred) {
         self->on_request_parse(ec, bytes_transferred);
       });
 }
@@ -106,7 +106,7 @@ void http_server::do_accept()
 
 response http_server::dispatch(const request &req)
 {
-  auto it = m_routes.find(route_key { req.method_type, req.path });
+  auto it = m_routes.find(route_key { req.line.method_type, req.line.path });
   if (it != m_routes.end())
     return it->second(req);
   return m_default_handler(req);

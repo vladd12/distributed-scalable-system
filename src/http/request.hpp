@@ -1,17 +1,24 @@
 #pragma once
 
 #include <http/common.hpp>
-#include <iosfwd> // std::istringstream
 
 namespace http
 {
 
-/// \brief Represents a parsed HTTP request.
-struct request
+/// \brief Represents a parsed request line from HTTP request.
+struct request_line
 {
   method method_type = method::UNKNOWN;
   std::string path;
   std::string version;
+
+  static request_line parse(std::istream &stream);
+};
+
+/// \brief Represents a parsed HTTP request.
+struct request
+{
+  request_line line;
   headers_t headers;
   std::string body;
 

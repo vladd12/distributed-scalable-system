@@ -1,5 +1,8 @@
 #include "http/common.hpp"
 
+#include <algorithm>
+#include <sstream>
+
 namespace http
 {
 
@@ -80,6 +83,40 @@ std::string_view status_text_for(const unsigned int code)
   default:
     return "Unknown";
   }
+}
+
+headers_t parse_headers(std::istream &stream)
+{
+  headers_t headers;
+  std::string line;
+
+  // Headers parsing
+  while (std::getline(stream, line))
+  {
+    if (!line.empty() && line.back() == '\r')
+      line.pop_back();
+
+    if (line.empty())
+      break;
+
+    auto colon = line.find(':');
+    if (colon == std::string::npos)
+      continue;
+
+    std::string key = line.substr(0, colon);
+    std::string value = line.substr(colon + 1);
+
+    // Lowercase the key for case-insensitive lookup
+    std::transform(key.begin(), key.end(), key.begin(), [](unsigned char c) { return std::tolower(c); });
+
+    // Trim leading whitespace from value
+    if (auto pos = value.find_first_not_of(' '); pos != std::string::npos)
+      value = value.substr(pos);
+
+    headers[std::move(key)] = std::move(value);
+  }
+
+  return headers;
 }
 
 } // namespace http

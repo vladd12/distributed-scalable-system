@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iosfwd> // std::istream
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -30,5 +31,9 @@ std::string_view method_to_string(const method m);
 std::string_view status_text_for(const unsigned int code);
 
 using headers_t = std::unordered_map<std::string, std::string>;
+
+headers_t parse_headers(std::istream &stream);
+
+constexpr inline std::string_view http_version = "HTTP/1.1";
 
 } // namespace http
