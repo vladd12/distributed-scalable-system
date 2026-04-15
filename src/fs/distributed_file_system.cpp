@@ -14,28 +14,29 @@ namespace fs
 static const core::not_implemented_error err("func is not implemented yet");
 
 // Distributed file system implementation
-distributed_file_system::distributed_file_system(const config::dfs_configuration &dfs_config)
-    : m_name_node(std::make_unique<dfs::name_node>(dfs_config.replication)), m_dfs_config(dfs_config)
+distributed_file_system::distributed_file_system(const config::name_node_configuration &name_node_config)
+    : m_name_node(std::make_unique<dfs::name_node>(name_node_config.replication)), m_name_node_config(name_node_config)
 {
   // Validate configuration
-  if (m_dfs_config.data_nodes.empty())
+  if (name_node_config.data_nodes.empty())
   {
     throw std::invalid_argument("No data nodes configured. A distributed file system requires at least one data node.");
   }
 
-  if (m_dfs_config.replication > m_dfs_config.data_nodes.size())
+  if (name_node_config.replication > name_node_config.data_nodes.size())
   {
     throw std::invalid_argument("Replication factor cannot be greater than the number of data nodes.");
   }
 
   // Initialize data nodes from configuration
-  for (const auto &node_config : m_dfs_config.data_nodes)
+  for (const auto &node_config : name_node_config.data_nodes)
   {
+    // TODO: capacity and node name must be requested
+    // node.node_name = node_config.node_name;
+    // node.capacity = node_config.capacity;
     dfs::data_node node;
-    node.node_id = node_config.node_id;
     node.host = node_config.host;
     node.port = node_config.port;
-    node.capacity = node_config.capacity;
     node.used_space = 0;
     node.is_alive = true;
     node.last_heartbeat = std::chrono::system_clock::now();

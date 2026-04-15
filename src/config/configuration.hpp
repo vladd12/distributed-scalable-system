@@ -64,29 +64,39 @@ struct file_configuration
 
 struct data_node_configuration
 {
-  std::string node_id;       ///< Unique identifier for the data node
-  std::string host;          ///< Host address of the data node
-  std::uint16_t port;        ///< Port number for the data node
-  std::uint64_t capacity;    ///< Storage capacity in bytes
-  std::string data_dir;      ///< Local directory where this node stores data
+  std::string node_name; ///< Unique identifier for the data node
+  std::string data_dir;  ///< Local directory where this node stores data
+  std::uint16_t port;    ///< Port number for the data node
 
   explicit data_node_configuration(const nlohmann::json &json);
 };
 
+struct data_node_for_name_node
+{
+  std::string host;   ///< Host address of the data node
+  std::uint16_t port; ///< Port number for the data node
+
+  explicit data_node_for_name_node(const nlohmann::json &json);
+};
+
+struct name_node_configuration
+{
+  std::string node_name;                           ///< Unique identifier for the name node
+  std::string data_dir;                            ///< Local directory where this node stores data
+  std::string name_dir;                            ///< Local directory where name node stores metadata
+  std::uint16_t port;                              ///< Port number for the name node
+  std::uint32_t replication;                       ///< How many copies we try to have at all times. The
+                                                   ///< actual number of replications is at max the number
+                                                   ///< of datanodes in the cluster.
+  std::vector<data_node_for_name_node> data_nodes; ///< List of information about data-nodes
+
+  explicit name_node_configuration(const nlohmann::json &json);
+};
+
 struct dfs_configuration
 {
-  std::uint64_t node_port;   ///< The port number that the dfs datanode server uses
-                             ///< as a starting point to look for a free port to listen on.
-  std::string name_dir;      ///< Determines where on the local filesystem the DFS
-                             ///< name node should store the name table.
-  std::string data_dir;      ///< Determines where on the local filesystem an DFS data
-                             ///< node should store its blocks. If this is a comma- or
-                             ///< space-delimited list of directories, then data will be
-                             ///< stored in all named directories, typically on different devices.
-  std::uint64_t replication; ///< How many copies we try to have at all times. The
-                             ///< actual number of replications is at max the number
-                             ///< of datanodes in the cluster.
-  std::vector<data_node_configuration> data_nodes; ///< Configuration for data nodes
+  std::optional<data_node_configuration> data_node; ///< Used when daemon must be running as data node
+  std::optional<name_node_configuration> name_node; ///< Used when daemon must be running as name node
 
   explicit dfs_configuration(const nlohmann::json &json);
 };

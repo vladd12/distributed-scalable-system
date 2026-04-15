@@ -33,7 +33,7 @@ file_system_ptr file_system_provider::get(const std::string &host, std::uint64_t
     }
     else
     {
-      file_system_ptr fs { std::move(std::make_shared<distributed_file_system>(m_cfg->dfs)) };
+      file_system_ptr fs { std::move(std::make_shared<distributed_file_system>(m_cfg->dfs.name_node.value())) };
       append(host_formated, fs);
       return fs;
     }

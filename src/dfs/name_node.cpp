@@ -136,7 +136,7 @@ std::vector<data_node> name_node::select_data_nodes_for_write(std::size_t count)
 void name_node::register_data_node(const data_node &node)
 {
   std::lock_guard<std::mutex> lock(m_nodes_mutex);
-  m_data_nodes[node.node_id] = node;
+  m_data_nodes[node.node_name] = node;
 }
 
 void name_node::update_heartbeat(const std::string &node_id)

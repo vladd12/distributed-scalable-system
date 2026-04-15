@@ -44,6 +44,7 @@ public:
   }
 };
 
+/// \brief Class for file system errors (file not found).
 class file_not_found final : public io_error
 {
 public:
@@ -52,6 +53,19 @@ public:
   }
 
   inline explicit file_not_found(const char *msg) : io_error(msg)
+  {
+  }
+};
+
+/// \brief Class for HTTP errors (connection errors, etc...).
+class http_error final : public std::runtime_error
+{
+public:
+  inline explicit http_error(const std::string &msg) : std::runtime_error(msg)
+  {
+  }
+
+  inline explicit http_error(const char *msg) : std::runtime_error(msg)
   {
   }
 };

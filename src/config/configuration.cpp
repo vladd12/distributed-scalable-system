@@ -1,4 +1,4 @@
-#include "config/configuration_v1.hpp"
+#include "config/configuration.hpp"
 
 #include <nlohmann/json.hpp>
 
@@ -41,27 +41,37 @@ file_configuration::file_configuration(const nlohmann::json &json) //
 }
 
 data_node_configuration::data_node_configuration(const nlohmann::json &json) //
-    : node_id(json["node-id"])
-    , host(json["host"])
-    , port(json["port"])
-    , capacity(json["capacity"])
-    , data_dir(json["data-dir"])
+    : node_name(json["node-name"]), data_dir(json["data-dir"]), port(json["port"])
 {
 }
 
-dfs_configuration::dfs_configuration(const nlohmann::json &json) //
-    : node_port(json["node-port"])
-    , name_dir(json["name-dir"])
+data_node_for_name_node::data_node_for_name_node(const nlohmann::json &json) //
+    : host(json["host"]), port(json["port"])
+{
+}
+
+name_node_configuration::name_node_configuration(const nlohmann::json &json) //
+    : node_name(json["node-name"])
     , data_dir(json["data-dir"])
+    , name_dir(json["name-dir"])
+    , port(json["port"])
     , replication(json["replication"])
 {
   if (json.contains("data-nodes"))
   {
-    for (const auto& node_json : json["data-nodes"])
+    for (const auto &data_node_json : json["data-nodes"])
     {
-      data_nodes.emplace_back(node_json);
+      data_nodes.emplace_back(data_node_json);
     }
   }
+}
+
+dfs_configuration::dfs_configuration(const nlohmann::json &json)
+{
+  if (json.contains("data-node"))
+    data_node.emplace(data_node_configuration(json["data-node"]));
+  if (json.contains("name-node"))
+    name_node.emplace(name_node_configuration(json["name-node"]));
 }
 
 sort_configuration::sort_configuration(const nlohmann::json &json) //

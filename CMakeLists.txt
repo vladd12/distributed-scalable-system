@@ -34,7 +34,7 @@ set(DCS_DAEMON_HEADERS
   "${DCS_SOURCES_DIR}/core/logger.hpp"
   "${DCS_SOURCES_DIR}/core/sys_api.hpp"
 
-  "${DCS_SOURCES_DIR}/config/configuration_v1.hpp"
+  "${DCS_SOURCES_DIR}/config/configuration.hpp"
 
   "${DCS_SOURCES_DIR}/config/json/fixed_string.hpp"
   "${DCS_SOURCES_DIR}/config/json/json_field_base.hpp"
@@ -49,13 +49,17 @@ set(DCS_DAEMON_HEADERS
   "${DCS_SOURCES_DIR}/fs/distributed_file_system.hpp"
   "${DCS_SOURCES_DIR}/fs/file_system_provider.hpp"
 
-  "${DCS_SOURCES_DIR}/ipc/ipc.hpp"
+  "${DCS_SOURCES_DIR}/http/common.hpp"
+  "${DCS_SOURCES_DIR}/http/request.hpp"
+  "${DCS_SOURCES_DIR}/http/response.hpp"
+  "${DCS_SOURCES_DIR}/http/server.hpp"
+  "${DCS_SOURCES_DIR}/http/client.hpp"
 )
 set(DCS_DAEMON_SOURCES
   "${DCS_SOURCES_DIR}/core/cmd_line_args.cpp"
   "${DCS_SOURCES_DIR}/core/logger.cpp"
 
-  "${DCS_SOURCES_DIR}/config/configuration_v1.cpp"
+  "${DCS_SOURCES_DIR}/config/configuration.cpp"
 
   "${DCS_SOURCES_DIR}/dfs/name_node.cpp"
 
@@ -63,17 +67,46 @@ set(DCS_DAEMON_SOURCES
   "${DCS_SOURCES_DIR}/fs/distributed_file_system.cpp"
   "${DCS_SOURCES_DIR}/fs/file_system_provider.cpp"
 
-  "${DCS_SOURCES_DIR}/ipc/ipc.cpp"
-
-  "${DCS_SOURCES_DIR}/main.cpp"
+  "${DCS_SOURCES_DIR}/http/common.cpp"
+  "${DCS_SOURCES_DIR}/http/request.cpp"
+  "${DCS_SOURCES_DIR}/http/response.cpp"
+  "${DCS_SOURCES_DIR}/http/server.cpp"
+  "${DCS_SOURCES_DIR}/http/client.cpp"
 )
 
 # Creating executable target
-add_executable(dcs-daemon ${DCS_DAEMON_HEADERS} ${DCS_DAEMON_SOURCES})
+add_executable(dcs-daemon ${DCS_DAEMON_HEADERS} ${DCS_DAEMON_SOURCES} "${DCS_SOURCES_DIR}/main.cpp")
 
 target_include_directories(dcs-daemon PRIVATE "${DCS_SOURCES_DIR}")
+target_compile_definitions(dcs-daemon PRIVATE _WIN32_WINNT=0x0601)
 
 target_link_libraries(dcs-daemon PRIVATE
+  Boost::program_options
+  Boost::filesystem
+  Boost::iostreams
+  fmt::fmt
+  spdlog::spdlog
+  nlohmann_json::nlohmann_json
+)
+
+# Creating executable target
+add_executable(dcs-client ${DCS_DAEMON_HEADERS} ${DCS_DAEMON_SOURCES} "${DCS_SOURCES_DIR}/client.cpp")
+target_include_directories(dcs-client PRIVATE "${DCS_SOURCES_DIR}")
+target_compile_definitions(dcs-client PRIVATE _WIN32_WINNT=0x0601)
+target_link_libraries(dcs-client PRIVATE
+  Boost::program_options
+  Boost::filesystem
+  Boost::iostreams
+  fmt::fmt
+  spdlog::spdlog
+  nlohmann_json::nlohmann_json
+)
+
+# Creating executable target
+add_executable(dcs-server ${DCS_DAEMON_HEADERS} ${DCS_DAEMON_SOURCES} "${DCS_SOURCES_DIR}/server.cpp")
+target_include_directories(dcs-server PRIVATE "${DCS_SOURCES_DIR}")
+target_compile_definitions(dcs-server PRIVATE _WIN32_WINNT=0x0601)
+target_link_libraries(dcs-server PRIVATE
   Boost::program_options
   Boost::filesystem
   Boost::iostreams
@@ -86,8 +119,9 @@ target_link_libraries(dcs-daemon PRIVATE
 add_custom_command(
   TARGET dcs-daemon POST_BUILD COMMAND
   ${CMAKE_COMMAND} -E copy
-    ${CMAKE_CURRENT_SOURCE_DIR}/config/default_config.json
-    ${CMAKE_CURRENT_BINARY_DIR}/default_config.json
+    -t "${CMAKE_CURRENT_BINARY_DIR}" # destination
+    "${CMAKE_CURRENT_SOURCE_DIR}/config/data_node_config.json"
+    "${CMAKE_CURRENT_SOURCE_DIR}/config/name_node_config.json"
 )
 
 # If enabled building tests for some features
