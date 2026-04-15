@@ -40,12 +40,6 @@ private:
   /// \brief Async reading the rest pasrt of the HTTP request.
   void do_remaining_read(const std::size_t remaining);
 
-  /// \brief  Function that checks difference between content length in request headers
-  ///         and actual body length, and returns this difference.
-  /// \return 0 - if no body length difference
-  ///         n - body length difference
-  std::size_t get_body_length_diff();
-
   /// \brief Parsing the incoming HTTP request from buffer with headers and possible part of body.
   void on_request_parse(boost::system::error_code ec, std::size_t bytes_transferred);
 

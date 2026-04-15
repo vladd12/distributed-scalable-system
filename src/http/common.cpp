@@ -119,4 +119,17 @@ headers_t parse_headers(std::istream &stream)
   return headers;
 }
 
+std::size_t get_remaining_data_length(const headers_t &headers, const std::string &body) noexcept
+{
+  const auto find_iter = headers.find("content-length");
+  if (find_iter != headers.cend())
+  {
+    const std::size_t expected_content_length = std::stoull(find_iter->second);
+    const std::size_t actual_content_length = body.length();
+    if (actual_content_length < expected_content_length)
+      return expected_content_length - actual_content_length;
+  }
+  return 0;
+}
+
 } // namespace http

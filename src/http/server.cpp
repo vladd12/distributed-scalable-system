@@ -40,22 +40,6 @@ void http_session::do_remaining_read(const std::size_t remaining)
       });
 }
 
-std::size_t http_session::get_body_length_diff()
-{
-  const auto find_iter = m_request.headers.find("content-length");
-  if (find_iter != m_request.headers.cend())
-  {
-    const std::size_t expected_content_length = std::stoull(find_iter->second);
-    const std::size_t actual_content_length = m_request.body.length();
-    if (actual_content_length < expected_content_length)
-    {
-      const std::size_t length_diff = expected_content_length - actual_content_length;
-      return length_diff;
-    }
-  }
-  return 0;
-}
-
 void http_session::on_request_parse(boost::system::error_code ec, std::size_t bytes_transferred)
 {
   if (ec)
@@ -73,7 +57,7 @@ void http_session::on_request_parse(boost::system::error_code ec, std::size_t by
   }
 
   // content length request body diff check
-  const std::size_t remaining = get_body_length_diff();
+  const std::size_t remaining = m_request.remaining();
   if (remaining != 0) // need reed more data
   {
     do_remaining_read(remaining);

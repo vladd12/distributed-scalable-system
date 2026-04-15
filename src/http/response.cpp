@@ -50,6 +50,11 @@ std::string response::serialize() const
   return oss.str();
 }
 
+std::size_t response::remaining() const noexcept
+{
+  return get_remaining_data_length(headers, body);
+}
+
 response response::text(unsigned int code, const std::string_view &text)
 {
   response resp;

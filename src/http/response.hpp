@@ -26,6 +26,10 @@ struct response
   /// \brief Serializes the full HTTP response into a string.
   std::string serialize() const;
 
+  /// \brief   Returns size of remaining data for reading from incoming HTTP response.
+  /// \details Used in HTTP client.
+  std::size_t remaining() const noexcept;
+
   /// \brief Creates a plain text response.
   static response text(unsigned int code, const std::string_view &text);
 

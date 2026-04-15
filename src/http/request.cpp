@@ -59,6 +59,11 @@ std::string request::serialize() const
   return req.str();
 }
 
+std::size_t request::remaining() const noexcept
+{
+  return get_remaining_data_length(headers, body);
+}
+
 request request::parse(std::istream &stream)
 {
   request req;
