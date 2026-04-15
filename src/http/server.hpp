@@ -24,6 +24,9 @@ class http_session : public std::enable_shared_from_this<http_session>
 public:
   using pointer = std::shared_ptr<http_session>;
 
+  /// \brief Constructor
+  http_session(tcp::socket socket, request_handler handler);
+
   /// \brief Creates a new session from an accepted socket.
   [[nodiscard]] static pointer create(tcp::socket socket, request_handler handler);
 
@@ -31,12 +34,27 @@ public:
   void start();
 
 private:
-  http_session(tcp::socket socket, request_handler handler);
-
+  /// \brief Async reading incoming HTTP request.
   void do_read();
+
+  /// \brief Async reading the rest pasrt of the HTTP request.
+  void do_remaining_read(const std::size_t remaining);
+
+  /// \brief  Function that checks difference between content length in request headers
+  ///         and actual body length, and returns this difference.
+  /// \return 0 - if no body length difference
+  ///         n - body length difference
+  std::size_t get_body_length_diff();
+
+  /// \brief Parsing the incoming HTTP request from buffer with headers and possible part of body.
   void on_request_parse(boost::system::error_code ec, std::size_t bytes_transferred);
+
+  /// \brief Adding remaining part of the HTTP request's body to the HTTP request structure.
+  void on_remaining_data_read(boost::system::error_code ec, std::size_t bytes_transferred);
+
   void process_request();
   void do_write();
+  void shutdown();
 
   tcp::socket m_socket;
   request_handler m_handler;

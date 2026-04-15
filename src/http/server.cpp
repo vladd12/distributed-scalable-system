@@ -9,7 +9,7 @@ namespace http
 
 http_session::pointer http_session::create(tcp::socket socket, request_handler handler)
 {
-  return pointer(new http_session(std::move(socket), std::move(handler)));
+  return std::make_shared<http_session>(std::move(socket), std::move(handler));
 }
 
 http_session::http_session(tcp::socket socket, request_handler handler)
@@ -31,20 +31,65 @@ void http_session::do_read()
       });
 }
 
+void http_session::do_remaining_read(const std::size_t remaining)
+{
+  auto self = shared_from_this();
+  asio::async_read(m_socket, m_buffer, asio::transfer_exactly(remaining), //
+      [self](boost::system::error_code ec, std::size_t bytes_transferred) {
+        self->on_remaining_data_read(ec, bytes_transferred);
+      });
+}
+
+std::size_t http_session::get_body_length_diff()
+{
+  const auto find_iter = m_request.headers.find("content-length");
+  if (find_iter != m_request.headers.cend())
+  {
+    const std::size_t expected_content_length = std::stoull(find_iter->second);
+    const std::size_t actual_content_length = m_request.body.length();
+    if (actual_content_length < expected_content_length)
+    {
+      const std::size_t length_diff = expected_content_length - actual_content_length;
+      return length_diff;
+    }
+  }
+  return 0;
+}
+
 void http_session::on_request_parse(boost::system::error_code ec, std::size_t bytes_transferred)
 {
-  if (ec && ec != asio::error::eof)
+  if (ec)
     return;
 
   try
   {
     std::istream stream(&m_buffer);
     m_request = std::move(request::parse(stream));
-    process_request();
-  } catch (...) /// TODO: realize that we must catch defferent errors from different parts of application
+  } catch (...) /// TODO: realize that we must catch different errors from different parts of application
   {
     m_response_data = response::text(400, "Bad Request").serialize();
+    do_write();
+    return;
   }
+
+  // content length request body diff check
+  const std::size_t remaining = get_body_length_diff();
+  if (remaining != 0) // need reed more data
+  {
+    do_remaining_read(remaining);
+  }
+  else // no need reed more data
+  {
+    process_request();
+    do_write();
+  }
+}
+
+void http_session::on_remaining_data_read(boost::system::error_code ec, std::size_t bytes_transferred)
+{
+  std::string_view view(static_cast<std::string_view::const_pointer>(m_buffer.data().data()), m_buffer.data().size());
+  m_request.body += view;
+  process_request();
   do_write();
 }
 
@@ -65,10 +110,15 @@ void http_session::do_write()
   asio::async_write(m_socket, asio::buffer(m_response_data), [self](boost::system::error_code ec, std::size_t) {
     if (!ec)
     {
-      boost::system::error_code shutdown_ec;
-      self->m_socket.shutdown(tcp::socket::shutdown_both, shutdown_ec);
+      self->shutdown();
     }
   });
+}
+
+void http_session::shutdown()
+{
+  boost::system::error_code shutdown_ec;
+  m_socket.shutdown(tcp::socket::shutdown_both, shutdown_ec);
 }
 
 // ---------------------------------------------------------------------------

@@ -25,6 +25,7 @@ class client_session : public std::enable_shared_from_this<client_session>
 public:
   using pointer = std::shared_ptr<client_session>;
 
+  /// \brief Constructor
   client_session(asio::io_context &io_context);
 
   /// \brief Creates a new client session.

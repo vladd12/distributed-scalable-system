@@ -1,6 +1,5 @@
 #include "http/response.hpp"
 
-#include <algorithm>
 #include <core/errors.hpp>
 #include <sstream>
 
@@ -57,6 +56,7 @@ response response::text(unsigned int code, const std::string_view &text)
   resp.line.status_code = code;
   resp.line.version = http_version;
   resp.headers["Content-Type"] = "text/plain";
+  resp.headers["Content-Length"] = std::to_string(text.size());
   resp.body = text;
   return resp;
 }
@@ -67,6 +67,7 @@ response response::json(unsigned int code, const std::string_view &json_body)
   resp.line.status_code = code;
   resp.line.version = http_version;
   resp.headers["Content-Type"] = "application/json";
+  resp.headers["Content-Length"] = std::to_string(json_body.size());
   resp.body = json_body;
   return resp;
 }

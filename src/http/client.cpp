@@ -182,6 +182,8 @@ void http_client::async_request(request req, response_callback handler)
 {
   req.headers["Host"] = m_host;
   req.headers["Connection"] = "Keep-Alive"; // HTTP 1.1 specific
+  if (!req.body.empty())
+    req.headers["Content-Length"] = std::to_string(req.body.length());
   m_session->write(req, std::move(handler));
 }
 
