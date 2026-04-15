@@ -50,8 +50,10 @@ private:
 
   void on_write_request(boost::system::error_code ec, std::size_t bytes_transferred);
 
-  void read_all();
+  void do_read();
+  void do_remaining_read(const std::size_t remaining);
   void on_response_parse(boost::system::error_code ec, std::size_t bytes_transferred);
+  void on_remaining_data_read(boost::system::error_code ec, std::size_t bytes_transferred);
 
   void finish(boost::system::error_code ec);
 
@@ -63,8 +65,6 @@ private:
   asio::streambuf m_buffer;
   response m_response;
   std::string m_request;
-  std::size_t m_content_length = 0;
-  bool m_keep_alive = false;
 };
 
 /// \brief Minimalistic asynchronous HTTP/1.1 client built on boost::asio.

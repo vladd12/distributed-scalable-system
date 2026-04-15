@@ -83,15 +83,24 @@ void client_session::on_write_request(boost::system::error_code ec, std::size_t 
     finish(ec);
     return;
   }
-  read_all();
+  do_read();
 }
 
-void client_session::read_all()
+void client_session::do_read()
 {
   auto self = shared_from_this();
-  asio::async_read(
-      m_socket, m_buffer, asio::transfer_all(), [self](boost::system::error_code ec, std::size_t bytes_transferred) {
+  asio::async_read_until(m_socket, m_buffer, "\r\n\r\n", //
+      [self](boost::system::error_code ec, std::size_t bytes_transferred) {
         self->on_response_parse(ec, bytes_transferred);
+      });
+}
+
+void client_session::do_remaining_read(const std::size_t remaining)
+{
+  auto self = shared_from_this();
+  asio::async_read(m_socket, m_buffer, asio::transfer_exactly(remaining), //
+      [self](boost::system::error_code ec, std::size_t bytes_transferred) {
+        self->on_remaining_data_read(ec, bytes_transferred);
       });
 }
 
@@ -108,26 +117,31 @@ void client_session::on_response_parse(boost::system::error_code ec, std::size_t
     std::istream stream(&m_buffer);
     m_response = std::move(response::parse(stream));
 
-    // Determine content length
-    auto it = m_response.headers.find("content-length");
-    if (it != m_response.headers.end())
-    {
-      m_content_length = std::stoul(it->second);
-      m_keep_alive = true; // assume keep-alive if content-length present
-    }
+    // content length request body diff check
+    const std::size_t remaining = m_response.remaining();
+    // need reed more data
+    if (remaining != 0)
+      do_remaining_read(remaining);
+    // no need reed more data
     else
-    {
-      // No content-length, read until connection close
-      m_content_length = 0;
-      m_keep_alive = false;
-    }
-
-    ec = boost::system::error_code();
+      finish(boost::system::error_code()); // no error
   } catch (...)
   {
-    ec = asio::error::invalid_argument;
+    finish(asio::error::invalid_argument);
   }
-  finish(ec);
+}
+
+void client_session::on_remaining_data_read(boost::system::error_code ec, std::size_t bytes_transferred)
+{
+  if (ec && ec != asio::error::eof)
+  {
+    finish(ec);
+    return;
+  }
+
+  std::string_view view(static_cast<std::string_view::const_pointer>(m_buffer.data().data()), m_buffer.data().size());
+  m_response.body += view;
+  finish(boost::system::error_code()); // no error
 }
 
 void client_session::finish(boost::system::error_code ec)

@@ -49,28 +49,30 @@ void http_session::on_request_parse(boost::system::error_code ec, std::size_t by
   {
     std::istream stream(&m_buffer);
     m_request = std::move(request::parse(stream));
+
+    // content length request body diff check
+    const std::size_t remaining = m_request.remaining();
+    if (remaining != 0) // need reed more data
+    {
+      do_remaining_read(remaining);
+    }
+    else // no need reed more data
+    {
+      process_request();
+      do_write();
+    }
   } catch (...) /// TODO: realize that we must catch different errors from different parts of application
   {
     m_response_data = response::text(400, "Bad Request").serialize();
-    do_write();
-    return;
-  }
-
-  // content length request body diff check
-  const std::size_t remaining = m_request.remaining();
-  if (remaining != 0) // need reed more data
-  {
-    do_remaining_read(remaining);
-  }
-  else // no need reed more data
-  {
-    process_request();
     do_write();
   }
 }
 
 void http_session::on_remaining_data_read(boost::system::error_code ec, std::size_t bytes_transferred)
 {
+  if (ec)
+    return;
+
   std::string_view view(static_cast<std::string_view::const_pointer>(m_buffer.data().data()), m_buffer.data().size());
   m_request.body += view;
   process_request();

@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
       });
   server.route(http::method::POST, "/data",            //
       [](const http::request &req) -> http::response { //
-        return http::response { 200, "HTTP/1.1" };
+        return http::response::text(200, req.body);
       });
 
   ctx.run();
