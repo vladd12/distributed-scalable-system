@@ -14,110 +14,126 @@ set(FETCHCONTENT_UPDATES_DISCONNECTED ON)
 
 # Adding path for cmake scripts
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-#include(get_gtest) # Getting googletest library
+
+# Getting dependencies
 include(get_conan) # Getting CMake conan
 include(get_boost) # Getting boost library using conan
 include(get_fmt) # Getting fmt library
 include(get_spdlog) # Getting spdlog library
 include(get_nlohmann_json) # Getting nlohmann_json library
 
-find_package(Boost COMPONENTS filesystem iostreams program_options REQUIRED) # Finding boost
+find_package(Boost COMPONENTS headers filesystem iostreams program_options REQUIRED) # Finding boost
 
 # Setup variables for directories
-set(DCS_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
-set(DCS_SOURCES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
-set(DCS_TESTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tests")
+set(DSS_SOURCES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
-set(DCS_DAEMON_HEADERS
-  "${DCS_SOURCES_DIR}/core/cmd_line_args.hpp"
-  "${DCS_SOURCES_DIR}/core/errors.hpp"
-  "${DCS_SOURCES_DIR}/core/logger.hpp"
-  "${DCS_SOURCES_DIR}/core/sys_api.hpp"
-
-  "${DCS_SOURCES_DIR}/config/configuration.hpp"
-
-  "${DCS_SOURCES_DIR}/config/json/fixed_string.hpp"
-  "${DCS_SOURCES_DIR}/config/json/json_field_base.hpp"
-  "${DCS_SOURCES_DIR}/config/json/json_struct.hpp"
-
-  "${DCS_SOURCES_DIR}/dfs/block.hpp"
-  "${DCS_SOURCES_DIR}/dfs/data_node.hpp"
-  "${DCS_SOURCES_DIR}/dfs/name_node.hpp"
-
-  "${DCS_SOURCES_DIR}/fs/file_system.hpp"
-  "${DCS_SOURCES_DIR}/fs/local_file_system.hpp"
-  "${DCS_SOURCES_DIR}/fs/distributed_file_system.hpp"
-  "${DCS_SOURCES_DIR}/fs/file_system_provider.hpp"
-
-  "${DCS_SOURCES_DIR}/http/common.hpp"
-  "${DCS_SOURCES_DIR}/http/request.hpp"
-  "${DCS_SOURCES_DIR}/http/response.hpp"
-  "${DCS_SOURCES_DIR}/http/server.hpp"
-  "${DCS_SOURCES_DIR}/http/client.hpp"
-)
-set(DCS_DAEMON_SOURCES
-  "${DCS_SOURCES_DIR}/core/cmd_line_args.cpp"
-  "${DCS_SOURCES_DIR}/core/logger.cpp"
-
-  "${DCS_SOURCES_DIR}/config/configuration.cpp"
-
-  "${DCS_SOURCES_DIR}/dfs/name_node.cpp"
-
-  "${DCS_SOURCES_DIR}/fs/local_file_system.cpp"
-  "${DCS_SOURCES_DIR}/fs/distributed_file_system.cpp"
-  "${DCS_SOURCES_DIR}/fs/file_system_provider.cpp"
-
-  "${DCS_SOURCES_DIR}/http/common.cpp"
-  "${DCS_SOURCES_DIR}/http/request.cpp"
-  "${DCS_SOURCES_DIR}/http/response.cpp"
-  "${DCS_SOURCES_DIR}/http/server.cpp"
-  "${DCS_SOURCES_DIR}/http/client.cpp"
+set(DSS_CONFIG_DIR "${DSS_SOURCES_DIR}/config")
+set(DSS_CONFIG_SOURCES
+  "${DSS_CONFIG_DIR}/configuration.hpp"
+  "${DSS_CONFIG_DIR}/configuration.cpp"
 )
 
-# Creating executable target
-add_executable(dcs-daemon ${DCS_DAEMON_HEADERS} ${DCS_DAEMON_SOURCES} "${DCS_SOURCES_DIR}/main.cpp")
+add_library(dss_config STATIC ${DSS_CONFIG_SOURCES})
+target_include_directories(dss_config PUBLIC "${DSS_SOURCES_DIR}")
+target_link_libraries(dss_config PUBLIC nlohmann_json::nlohmann_json)
 
-target_include_directories(dcs-daemon PRIVATE "${DCS_SOURCES_DIR}")
-target_compile_definitions(dcs-daemon PRIVATE _WIN32_WINNT=0x0601)
+set(DSS_CORE_DIR "${DSS_SOURCES_DIR}/core")
+set(DSS_CORE_SOURCES
+  "${DSS_CORE_DIR}/cmd_line_args.hpp"
+  "${DSS_CORE_DIR}/cmd_line_args.cpp"
+  "${DSS_CORE_DIR}/errors.hpp"
+  "${DSS_CORE_DIR}/logger.hpp"
+  "${DSS_CORE_DIR}/logger.cpp"
+  "${DSS_CORE_DIR}/sys_api.hpp"
+)
 
-target_link_libraries(dcs-daemon PRIVATE
+add_library(dss_core STATIC ${DSS_CORE_SOURCES})
+target_include_directories(dss_core PUBLIC "${DSS_SOURCES_DIR}")
+target_link_libraries(dss_core PUBLIC
   Boost::program_options
+  spdlog::spdlog
+  dss_config
+)
+
+set(DSS_DFS_DIR "${DSS_SOURCES_DIR}/dfs")
+set(DSS_DFS_SOURCES
+  "${DSS_DFS_DIR}/block.hpp"
+  "${DSS_DFS_DIR}/data_node.hpp"
+  "${DSS_DFS_DIR}/name_node.hpp"
+  "${DSS_DFS_DIR}/name_node.cpp"
+)
+
+add_library(dss_dfs STATIC ${DSS_DFS_SOURCES})
+target_include_directories(dss_dfs PUBLIC "${DSS_SOURCES_DIR}")
+
+set(DSS_FS_DIR "${DSS_SOURCES_DIR}/fs")
+set(DSS_FS_SOURCES
+  "${DSS_FS_DIR}/file_system.hpp"
+  "${DSS_FS_DIR}/local_file_system.hpp"
+  "${DSS_FS_DIR}/local_file_system.cpp"
+  "${DSS_FS_DIR}/distributed_file_system.hpp"
+  "${DSS_FS_DIR}/distributed_file_system.cpp"
+  "${DSS_FS_DIR}/file_system_provider.hpp"
+  "${DSS_FS_DIR}/file_system_provider.cpp"
+)
+
+add_library(dss_fs STATIC ${DSS_FS_SOURCES})
+target_include_directories(dss_fs PUBLIC "${DSS_SOURCES_DIR}")
+target_link_libraries(dss_fs PUBLIC
   Boost::filesystem
   Boost::iostreams
   fmt::fmt
-  spdlog::spdlog
-  nlohmann_json::nlohmann_json
+  dss_config
+  dss_core
+  dss_dfs
+)
+
+set(DSS_HTTP_DIR "${DSS_SOURCES_DIR}/http")
+set(DSS_HTTP_SOURCES
+  "${DSS_HTTP_DIR}/common.hpp"
+  "${DSS_HTTP_DIR}/common.cpp"
+  "${DSS_HTTP_DIR}/request.hpp"
+  "${DSS_HTTP_DIR}/request.cpp"
+  "${DSS_HTTP_DIR}/response.hpp"
+  "${DSS_HTTP_DIR}/response.cpp"
+  "${DSS_HTTP_DIR}/server.hpp"
+  "${DSS_HTTP_DIR}/server.cpp"
+  "${DSS_HTTP_DIR}/client.hpp"
+  "${DSS_HTTP_DIR}/client.cpp"
+)
+
+add_library(dss_http STATIC ${DSS_HTTP_SOURCES})
+target_include_directories(dss_http PUBLIC "${DSS_SOURCES_DIR}")
+target_link_libraries(dss_http PUBLIC
+  Boost::headers
+  dss_core
+)
+if(MSVC)
+  target_compile_definitions(dss_http PUBLIC _WIN32_WINNT=0x0601)
+endif()
+
+
+# Creating executable target
+add_executable(dss_daemon "${DSS_SOURCES_DIR}/main.cpp")
+target_include_directories(dss_daemon PRIVATE "${DSS_SOURCES_DIR}")
+target_link_libraries(dss_daemon PRIVATE
+  dss_fs
+  dss_http
 )
 
 # Creating executable target
-add_executable(dcs-client ${DCS_DAEMON_HEADERS} ${DCS_DAEMON_SOURCES} "${DCS_SOURCES_DIR}/client.cpp")
-target_include_directories(dcs-client PRIVATE "${DCS_SOURCES_DIR}")
-target_compile_definitions(dcs-client PRIVATE _WIN32_WINNT=0x0601)
-target_link_libraries(dcs-client PRIVATE
-  Boost::program_options
-  Boost::filesystem
-  Boost::iostreams
-  fmt::fmt
-  spdlog::spdlog
-  nlohmann_json::nlohmann_json
-)
+add_executable(dss_client "${DSS_SOURCES_DIR}/client.cpp")
+target_include_directories(dss_client PRIVATE "${DSS_SOURCES_DIR}")
+target_link_libraries(dss_client PRIVATE dss_http)
 
 # Creating executable target
-add_executable(dcs-server ${DCS_DAEMON_HEADERS} ${DCS_DAEMON_SOURCES} "${DCS_SOURCES_DIR}/server.cpp")
-target_include_directories(dcs-server PRIVATE "${DCS_SOURCES_DIR}")
-target_compile_definitions(dcs-server PRIVATE _WIN32_WINNT=0x0601)
-target_link_libraries(dcs-server PRIVATE
-  Boost::program_options
-  Boost::filesystem
-  Boost::iostreams
-  fmt::fmt
-  spdlog::spdlog
-  nlohmann_json::nlohmann_json
-)
+add_executable(dss_server "${DSS_SOURCES_DIR}/server.cpp")
+target_include_directories(dss_server PRIVATE "${DSS_SOURCES_DIR}")
+target_link_libraries(dss_server PRIVATE dss_http)
 
 # Copy default config after build
 add_custom_command(
-  TARGET dcs-daemon POST_BUILD COMMAND
+  TARGET dss_daemon POST_BUILD COMMAND
   ${CMAKE_COMMAND} -E copy
     -t "${CMAKE_CURRENT_BINARY_DIR}" # destination
     "${CMAKE_CURRENT_SOURCE_DIR}/config/data_node_config.json"
