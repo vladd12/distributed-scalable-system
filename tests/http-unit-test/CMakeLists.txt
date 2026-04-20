@@ -1,4 +1,5 @@
 set(HTTP_UNIT_TEST_SRC
+  "${CMAKE_CURRENT_SOURCE_DIR}/http_common_test.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/http_headers_test.cpp"
 )
 
