@@ -76,8 +76,6 @@ private:
   void do_accept();
   response dispatch(const request &req);
 
-  tcp::acceptor m_acceptor;
-
   struct route_key
   {
     method method_type;
@@ -90,6 +88,7 @@ private:
     std::size_t operator()(const route_key &key) const;
   };
 
+  tcp::acceptor m_acceptor;
   std::unordered_map<route_key, request_handler, route_key_hash> m_routes;
   request_handler m_default_handler;
 };

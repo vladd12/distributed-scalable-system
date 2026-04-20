@@ -52,7 +52,7 @@ std::string response::serialize() const
 
 std::size_t response::remaining() const noexcept
 {
-  return get_remaining_data_length(headers, body);
+  return headers.remaining(body);
 }
 
 response response::text(unsigned int code, const std::string_view &text)
@@ -82,8 +82,8 @@ response response::parse(std::istream &stream)
   response resp;
   std::string line;
 
-  resp.line = std::move(status_line::parse(stream)); // Status line
-  resp.headers = std::move(parse_headers(stream));   // Headers
+  resp.line = std::move(status_line::parse(stream));  // Status line
+  resp.headers = std::move(headers_t::parse(stream)); // Headers
 
   // Body parsing (rest of stream)
   std::ostringstream body_stream;

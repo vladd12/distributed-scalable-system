@@ -1,7 +1,7 @@
 #include "http/common.hpp"
 
 #include <algorithm>
-#include <sstream>
+#include <istream>
 
 namespace http
 {
@@ -85,7 +85,7 @@ std::string_view status_text_for(const unsigned int code)
   }
 }
 
-headers_t parse_headers(std::istream &stream)
+headers_t headers_t::parse(std::istream &stream)
 {
   headers_t headers;
   std::string line;
@@ -119,17 +119,23 @@ headers_t parse_headers(std::istream &stream)
   return headers;
 }
 
-std::size_t get_remaining_data_length(const headers_t &headers, const std::string &body) noexcept
+std::size_t headers_t::content_length() const noexcept
 {
-  const auto find_iter = headers.find("content-length");
-  if (find_iter != headers.cend())
-  {
-    const std::size_t expected_content_length = std::stoull(find_iter->second);
-    const std::size_t actual_content_length = body.length();
-    if (actual_content_length < expected_content_length)
-      return expected_content_length - actual_content_length;
-  }
-  return 0;
+  const auto find_iter = find("content-length");
+  if (find_iter != cend())
+    return std::stoull(find_iter->second);
+  else
+    return 0;
+}
+
+std::size_t headers_t::remaining(const std::string &body) const noexcept
+{
+  const std::size_t expected = content_length();
+  const std::size_t actual = body.length();
+  if (actual < expected)
+    return expected - actual;
+  else
+    return 0;
 }
 
 } // namespace http

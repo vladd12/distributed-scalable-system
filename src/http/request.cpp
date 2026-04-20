@@ -61,7 +61,7 @@ std::string request::serialize() const
 
 std::size_t request::remaining() const noexcept
 {
-  return get_remaining_data_length(headers, body);
+  return headers.remaining(body);
 }
 
 request request::parse(std::istream &stream)
@@ -70,7 +70,7 @@ request request::parse(std::istream &stream)
   std::string line;
 
   req.line = std::move(request_line::parse(stream)); // Request line
-  req.headers = std::move(parse_headers(stream));    // Headers
+  req.headers = std::move(headers_t::parse(stream)); // Headers
 
   // Body parsing (rest of stream)
   std::ostringstream body_stream;
