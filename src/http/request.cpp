@@ -59,7 +59,7 @@ std::string request::serialize() const
   return req.str();
 }
 
-std::size_t request::remaining() const noexcept
+std::size_t request::remaining() const
 {
   return headers.remaining(body);
 }

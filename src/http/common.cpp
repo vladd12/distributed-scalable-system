@@ -1,6 +1,8 @@
 #include "http/common.hpp"
 
 #include <algorithm>
+#include <charconv>
+#include <core/errors.hpp>
 #include <istream>
 
 namespace http
@@ -74,6 +76,12 @@ std::string_view status_text_for(const unsigned int code)
     return "Not Found";
   case 405:
     return "Method Not Allowed";
+  case 408:
+    return "Request Timeout";
+  case 413:
+    return "Payload Too Large";
+  case 431:
+    return "Request Header Fields Too Large";
   case 500:
     return "Internal Server Error";
   case 502:
@@ -119,16 +127,29 @@ headers_t headers_t::parse(std::istream &stream)
   return headers;
 }
 
-std::size_t headers_t::content_length() const noexcept
+std::size_t headers_t::content_length() const
 {
   const auto find_iter = find("content-length");
   if (find_iter != cend())
-    return std::stoull(find_iter->second);
+  {
+    const auto &value = find_iter->second;
+    if (value.empty())
+      throw core::http_error("request parsing error: invalid Content-Length");
+
+    std::size_t content_length = 0;
+    const char *begin = value.data();
+    const char *end = value.data() + value.size();
+    const auto [parse_end, parse_error] = std::from_chars(begin, end, content_length);
+    if (parse_error != std::errc() || parse_end != end)
+      throw core::http_error("request parsing error: invalid Content-Length");
+
+    return content_length;
+  }
   else
     return 0;
 }
 
-std::size_t headers_t::remaining(const std::string &body) const noexcept
+std::size_t headers_t::remaining(const std::string &body) const
 {
   const std::size_t expected = content_length();
   const std::size_t actual = body.length();

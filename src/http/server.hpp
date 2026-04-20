@@ -6,6 +6,7 @@
 #include <boost/asio.hpp>
 #include <boost/noncopyable.hpp>
 //
+#include <chrono>
 #include <functional>
 #include <memory>
 
@@ -34,6 +35,10 @@ public:
   void start();
 
 private:
+  static constexpr std::size_t max_header_size = 16 * 1024;
+  static constexpr std::size_t max_body_size = 1024 * 1024;
+  static constexpr std::chrono::seconds io_timeout { 10 };
+
   /// \brief Async reading incoming HTTP request.
   void do_read();
 
@@ -48,11 +53,15 @@ private:
 
   void process_request();
   void do_write();
+  void start_timeout();
+  void cancel_timeout();
   void shutdown();
 
   tcp::socket m_socket;
   request_handler m_handler;
+  asio::steady_timer m_timer;
   asio::streambuf m_buffer;
+  std::size_t m_expected_body_size;
   request m_request;
   std::string m_response_data;
 };

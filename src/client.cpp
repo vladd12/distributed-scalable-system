@@ -38,15 +38,28 @@ int main(int argc, char *argv[])
   const std::string data = get_random_string(1024 * 4);
 
   client.post("/data", {}, data, //
-      [](boost::system::error_code ec, const http::response &resp) {
+      [&client](boost::system::error_code ec, const http::response &resp) {
         if (ec)
+        {
           std::cout << "error code: " << ec.what() << '\n';
+          return;
+        }
 
         std::cout << "code: " << resp.line.status_code << '\n';
         if (resp.body.empty())
           std::cout << "empty body received\n";
         else
           std::cout << "body: " << resp.body << '\n';
+
+        // chained request
+        client.get("/health", {}, //
+            [](boost::system::error_code ec, const http::response &resp) {
+              if (ec)
+              {
+                std::cout << "error code: " << ec.what() << '\n';
+                return;
+              };
+            });
       });
 
   // client.get("/health", {}, //

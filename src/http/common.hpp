@@ -37,12 +37,12 @@ struct headers_t : public std::unordered_map<std::string, std::string>
   [[nodiscard]] static headers_t parse(std::istream &stream);
 
   /// \brief Returns value of the "Content-Length" HTTP header.
-  [[nodiscard]] std::size_t content_length() const noexcept;
+  [[nodiscard]] std::size_t content_length() const;
 
   /// \brief   Compares the expected content length from HTTP headers
   ///          with the actual size of bofy for HTTP requests/responses.
   /// \details Used as common part in HTTP requests/responses.
-  [[nodiscard]] std::size_t remaining(const std::string &body) const noexcept;
+  [[nodiscard]] std::size_t remaining(const std::string &body) const;
 };
 
 constexpr inline std::string_view http_version = "HTTP/1.1";

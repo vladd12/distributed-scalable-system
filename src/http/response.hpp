@@ -28,7 +28,7 @@ struct response
 
   /// \brief   Returns size of remaining data for reading from incoming HTTP response.
   /// \details Used in HTTP client.
-  [[nodiscard]] std::size_t remaining() const noexcept;
+  [[nodiscard]] std::size_t remaining() const;
 
   /// \brief Creates a plain text response.
   [[nodiscard]] static response text(unsigned int code, const std::string_view &text);

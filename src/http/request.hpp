@@ -27,7 +27,7 @@ struct request
 
   /// \brief Returns size of remaining data for reading from incoming HTTP request.
   /// \details Used in HTTP server.
-  [[nodiscard]] std::size_t remaining() const noexcept;
+  [[nodiscard]] std::size_t remaining() const;
 
   /// \brief Parses a raw HTTP request from an input stream.
   [[nodiscard]] static request parse(std::istream &stream);

@@ -50,7 +50,7 @@ std::string response::serialize() const
   return oss.str();
 }
 
-std::size_t response::remaining() const noexcept
+std::size_t response::remaining() const
 {
   return headers.remaining(body);
 }
