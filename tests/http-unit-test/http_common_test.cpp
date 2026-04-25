@@ -1,3 +1,4 @@
+#include <core/conversion.hpp>
 #include <gtest/gtest.h>
 #include <http/common.hpp>
 
@@ -33,23 +34,23 @@ TEST(http_common_test, method_to_string_test)
 
 TEST(http_common_test, status_text_for_test)
 {
-  ASSERT_EQ(http::status_text_for(200), "OK");
-  ASSERT_EQ(http::status_text_for(201), "Created");
-  ASSERT_EQ(http::status_text_for(204), "No Content");
-  ASSERT_EQ(http::status_text_for(301), "Moved Permanently");
-  ASSERT_EQ(http::status_text_for(302), "Found");
-  ASSERT_EQ(http::status_text_for(304), "Not Modified");
-  ASSERT_EQ(http::status_text_for(400), "Bad Request");
-  ASSERT_EQ(http::status_text_for(401), "Unauthorized");
-  ASSERT_EQ(http::status_text_for(403), "Forbidden");
-  ASSERT_EQ(http::status_text_for(404), "Not Found");
-  ASSERT_EQ(http::status_text_for(405), "Method Not Allowed");
-  ASSERT_EQ(http::status_text_for(408), "Request Timeout");
-  ASSERT_EQ(http::status_text_for(413), "Payload Too Large");
-  ASSERT_EQ(http::status_text_for(431), "Request Header Fields Too Large");
-  ASSERT_EQ(http::status_text_for(500), "Internal Server Error");
-  ASSERT_EQ(http::status_text_for(502), "Bad Gateway");
-  ASSERT_EQ(http::status_text_for(503), "Service Unavailable");
-  ASSERT_EQ(http::status_text_for(600), "Unknown");
-  ASSERT_EQ(http::status_text_for(700), "Unknown");
+  ASSERT_EQ(http::status_text_for(http::status_code::OK), "OK");
+  ASSERT_EQ(http::status_text_for(http::status_code::CREATED), "Created");
+  ASSERT_EQ(http::status_text_for(http::status_code::NO_CONTENT), "No Content");
+  ASSERT_EQ(http::status_text_for(http::status_code::MOVED_PERMANENTLY), "Moved Permanently");
+  ASSERT_EQ(http::status_text_for(http::status_code::FOUND), "Found");
+  ASSERT_EQ(http::status_text_for(http::status_code::NOT_MODIFIED), "Not Modified");
+  ASSERT_EQ(http::status_text_for(http::status_code::BAD_REQUEST), "Bad Request");
+  ASSERT_EQ(http::status_text_for(http::status_code::UNAUTHORIZED), "Unauthorized");
+  ASSERT_EQ(http::status_text_for(http::status_code::FORBIDDEN), "Forbidden");
+  ASSERT_EQ(http::status_text_for(http::status_code::NOT_FOUND), "Not Found");
+  ASSERT_EQ(http::status_text_for(http::status_code::NOT_ALLOWED), "Method Not Allowed");
+  ASSERT_EQ(http::status_text_for(http::status_code::REQUEST_TIMEOUT), "Request Timeout");
+  ASSERT_EQ(http::status_text_for(http::status_code::LARGE_PAYLOAD), "Payload Too Large");
+  ASSERT_EQ(http::status_text_for(http::status_code::LARGE_HEADERS), "Request Header Fields Too Large");
+  ASSERT_EQ(http::status_text_for(http::status_code::INTERNAL_SERVER_ERROR), "Internal Server Error");
+  ASSERT_EQ(http::status_text_for(http::status_code::BAD_GATEWAY), "Bad Gateway");
+  ASSERT_EQ(http::status_text_for(http::status_code::UNAVAILABLE), "Service Unavailable");
+  ASSERT_EQ(http::status_text_for(core::from_underlying<http::status_code>(std::uint16_t(600))), "Unknown");
+  ASSERT_EQ(http::status_text_for(core::from_underlying<http::status_code>(std::uint16_t(700))), "Unknown");
 }

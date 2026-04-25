@@ -21,6 +21,28 @@ enum class method
   UNKNOWN
 };
 
+/// \brief Representation of HTTP response code.
+enum class status_code : std::uint16_t
+{
+  OK = 200,
+  CREATED = 201,
+  NO_CONTENT = 204,
+  MOVED_PERMANENTLY = 301,
+  FOUND = 302,
+  NOT_MODIFIED = 304,
+  BAD_REQUEST = 400,
+  UNAUTHORIZED = 401,
+  FORBIDDEN = 403,
+  NOT_FOUND = 404,
+  NOT_ALLOWED = 405,
+  REQUEST_TIMEOUT = 408,
+  LARGE_PAYLOAD = 413,
+  LARGE_HEADERS = 431,
+  INTERNAL_SERVER_ERROR = 500,
+  BAD_GATEWAY = 502,
+  UNAVAILABLE = 503,
+};
+
 /// \brief Converts a string to an HTTP method.
 [[nodiscard]] method string_to_method(const std::string_view str);
 
@@ -28,7 +50,7 @@ enum class method
 [[nodiscard]] std::string_view method_to_string(const method m);
 
 /// \brief Returns a standard reason phrase for the given HTTP status code.
-[[nodiscard]] std::string_view status_text_for(const unsigned int code);
+[[nodiscard]] std::string_view status_text_for(const status_code code);
 
 /// \brief Type for representation headers in HTTP request/response.
 struct headers_t : public std::unordered_map<std::string, std::string>

@@ -8,7 +8,7 @@ namespace http
 /// \brief Represents a parsed status line from HTTP response.
 struct status_line
 {
-  unsigned int status_code = 200;
+  status_code status_code = status_code::OK;
   std::string version;
 
   [[nodiscard]] static status_line parse(std::istream &stream);
@@ -18,8 +18,6 @@ struct status_line
 struct response
 {
   status_line line;
-  // unsigned int status_code = 200;
-  // std::string version;
   headers_t headers;
   std::string body;
 
@@ -30,11 +28,14 @@ struct response
   /// \details Used in HTTP client.
   [[nodiscard]] std::size_t remaining() const;
 
+  /// \brief Creates a simple response with specified code and without body.
+  [[nodiscard]] static response simple(const status_code code);
+
   /// \brief Creates a plain text response.
-  [[nodiscard]] static response text(unsigned int code, const std::string_view &text);
+  [[nodiscard]] static response text(const status_code code, const std::string_view &text);
 
   /// \brief Creates a JSON response.
-  [[nodiscard]] static response json(unsigned int code, const std::string_view &json_body);
+  [[nodiscard]] static response json(const status_code code, const std::string_view &json_body);
 
   /// \brief Parses a raw HTTP response from an input stream.
   [[nodiscard]] static response parse(std::istream &stream);

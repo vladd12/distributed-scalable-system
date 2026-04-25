@@ -45,6 +45,7 @@ set(DSS_CORE_SOURCES
   "${DSS_CORE_DIR}/logger.hpp"
   "${DSS_CORE_DIR}/logger.cpp"
   "${DSS_CORE_DIR}/sys_api.hpp"
+  "${DSS_CORE_DIR}/conversion.hpp"
 )
 
 add_library(dss_core STATIC ${DSS_CORE_SOURCES})

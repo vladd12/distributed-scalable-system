@@ -9,11 +9,11 @@ int main(int argc, char *argv[])
   server.route(http::method::GET, "/health", //
       [](const http::request &) {            //
         std::cout << "incoming request\n";
-        return http::response::json(200, R"({"status":"ok"})");
+        return http::response::json(http::status_code::OK, R"({"status":"ok"})");
       });
   server.route(http::method::POST, "/data",            //
       [](const http::request &req) -> http::response { //
-        return http::response::text(200, req.body);
+        return http::response::text(http::status_code::OK, req.body);
       });
 
   ctx.run();

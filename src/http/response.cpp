@@ -1,5 +1,6 @@
 #include "http/response.hpp"
 
+#include <core/conversion.hpp>
 #include <core/errors.hpp>
 #include <sstream>
 
@@ -19,8 +20,10 @@ status_line status_line::parse(std::istream &stream)
     temp_line.pop_back();
 
   std::istringstream _status_line(temp_line);
-  if (!(_status_line >> line.version >> line.status_code))
+  std::uint16_t code;
+  if (!(_status_line >> line.version >> code))
     throw core::http_error("response parsing error: invalid status line");
+  line.status_code = core::from_underlying<::http::status_code>(code);
 
   return line;
 }
@@ -28,7 +31,8 @@ status_line status_line::parse(std::istream &stream)
 std::string response::serialize() const
 {
   std::ostringstream oss;
-  oss << line.version << ' ' << line.status_code << ' ' << status_text_for(line.status_code) << "\r\n";
+  oss << line.version << ' ' << core::to_underlying(line.status_code) << ' ' //
+      << status_text_for(line.status_code) << "\r\n";
 
   bool has_content_length = false;
   bool has_connection = false;
@@ -55,7 +59,15 @@ std::size_t response::remaining() const
   return headers.remaining(body);
 }
 
-response response::text(unsigned int code, const std::string_view &text)
+response response::simple(const status_code code)
+{
+  response resp;
+  resp.line.status_code = code;
+  resp.line.version = http_version;
+  return resp;
+}
+
+response response::text(const status_code code, const std::string_view &text)
 {
   response resp;
   resp.line.status_code = code;
@@ -66,7 +78,7 @@ response response::text(unsigned int code, const std::string_view &text)
   return resp;
 }
 
-response response::json(unsigned int code, const std::string_view &json_body)
+response response::json(const status_code code, const std::string_view &json_body)
 {
   response resp;
   resp.line.status_code = code;

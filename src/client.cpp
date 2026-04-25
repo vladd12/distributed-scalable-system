@@ -1,3 +1,4 @@
+#include <core/conversion.hpp>
 #include <http/client.hpp>
 #include <iostream>
 #include <random>
@@ -45,7 +46,7 @@ int main(int argc, char *argv[])
           return;
         }
 
-        std::cout << "code: " << resp.line.status_code << '\n';
+        std::cout << "code: " << core::to_underlying(resp.line.status_code) << '\n';
         if (resp.body.empty())
           std::cout << "empty body received\n";
         else

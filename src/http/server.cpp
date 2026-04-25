@@ -42,7 +42,7 @@ void http_session::do_remaining_read(const std::size_t remaining)
 {
   if (remaining > max_body_size || (m_request.body.size() + remaining) > max_body_size)
   {
-    m_response_data = response::text(413, "Payload Too Large").serialize();
+    m_response_data = response::simple(status_code::LARGE_PAYLOAD).serialize();
     do_write();
     return;
   }
@@ -64,10 +64,11 @@ void http_session::on_request_parse(boost::system::error_code ec, std::size_t by
 
   if (ec == asio::error::not_found)
   {
-    m_response_data = response::text(431, "Request Header Fields Too Large").serialize();
+    m_response_data = response::simple(status_code::LARGE_HEADERS).serialize();
     do_write();
     return;
   }
+
   if (ec)
   {
     shutdown();
@@ -82,7 +83,7 @@ void http_session::on_request_parse(boost::system::error_code ec, std::size_t by
     m_expected_body_size = m_request.headers.content_length();
     if (m_expected_body_size > max_body_size)
     {
-      m_response_data = response::text(413, "Payload Too Large").serialize();
+      m_response_data = response::simple(status_code::LARGE_PAYLOAD).serialize();
       do_write();
       return;
     }
@@ -102,11 +103,11 @@ void http_session::on_request_parse(boost::system::error_code ec, std::size_t by
     }
   } catch (const core::http_error &)
   {
-    m_response_data = response::text(400, "Bad Request").serialize();
+    m_response_data = response::text(status_code::BAD_REQUEST, "Bad Request").serialize();
     do_write();
   } catch (const std::exception &)
   {
-    m_response_data = response::text(500, "Internal Server Error").serialize();
+    m_response_data = response::text(status_code::INTERNAL_SERVER_ERROR, "Internal Server Error").serialize();
     do_write();
   }
 }
@@ -130,7 +131,7 @@ void http_session::on_remaining_data_read(boost::system::error_code ec, std::siz
 
   if (m_request.body.size() != m_expected_body_size)
   {
-    m_response_data = response::text(400, "Bad Request").serialize();
+    m_response_data = response::text(status_code::BAD_REQUEST, "Bad Request").serialize();
     do_write();
     return;
   }
@@ -145,10 +146,10 @@ void http_session::process_request()
     m_response_data = m_handler(m_request).serialize();
   } catch (const core::http_error &)
   {
-    m_response_data = response::text(400, "Bad Request").serialize();
+    m_response_data = response::text(status_code::BAD_REQUEST, "Bad Request").serialize();
   } catch (const std::exception &)
   {
-    m_response_data = response::text(500, "Internal Server Error").serialize();
+    m_response_data = response::text(status_code::INTERNAL_SERVER_ERROR, "Internal Server Error").serialize();
   }
 }
 
@@ -205,7 +206,7 @@ void http_session::shutdown()
 http_server::http_server(asio::io_context &ctx, const std::uint16_t port)
     : m_acceptor(ctx, tcp::endpoint(asio::ip::make_address("0.0.0.0"), port))
 {
-  m_default_handler = [](const request &) { return response::text(404, "Not Found"); };
+  m_default_handler = [](const request &) { return response::text(status_code::NOT_FOUND, "Not Found"); };
   do_accept();
 }
 
