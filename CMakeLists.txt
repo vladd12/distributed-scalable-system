@@ -1,12 +1,12 @@
 # Project definition and settings
 cmake_minimum_required(VERSION 3.15)
-project(dcs VERSION 1.0.0 LANGUAGES C CXX)
+project(dss VERSION 1.0.0 LANGUAGES C CXX)
 
 # Language settings
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-option(BUILD_DCS_TESTS "Build dcs tests" ON)
+option(BUILD_DSS_TESTS "Build dcs tests" ON)
 
 # CMake's fetch content options
 include(FetchContent)
@@ -141,7 +141,7 @@ add_custom_command(
 )
 
 # If enabled building tests for some features
-if(BUILD_DCS_TESTS)
+if(BUILD_DSS_TESTS)
   message(STATUS "Tests building for dcs is enabled")
   include(CTest)
   include(get_gtest)

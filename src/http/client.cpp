@@ -76,7 +76,7 @@ void client_session::write(const request &req, response_callback handler)
       [self](boost::system::error_code ec, std::size_t bytes) { self->on_write_request(ec, bytes); });
 }
 
-void client_session::on_write_request(boost::system::error_code ec, std::size_t /*bytes_transferred*/)
+void client_session::on_write_request(boost::system::error_code ec, std::size_t bytes_transferred)
 {
   if (ec)
   {
