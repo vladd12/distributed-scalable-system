@@ -1,6 +1,7 @@
 set(HTTP_UNIT_TEST_SRC
   "${CMAKE_CURRENT_SOURCE_DIR}/http_common_test.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/http_headers_test.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/basic_http_session_test.cpp"
 )
 
 add_executable(http-unit-test ${HTTP_UNIT_TEST_SRC})

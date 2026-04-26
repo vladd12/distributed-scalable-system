@@ -88,6 +88,9 @@ target_link_libraries(dss_fs PUBLIC
   dss_core
   dss_dfs
 )
+if(MSVC)
+  target_compile_definitions(dss_fs PRIVATE _WIN32_WINNT=0x0601)
+endif()
 
 set(DSS_HTTP_DIR "${DSS_SOURCES_DIR}/http")
 set(DSS_HTTP_SOURCES
@@ -101,6 +104,7 @@ set(DSS_HTTP_SOURCES
   "${DSS_HTTP_DIR}/server.cpp"
   "${DSS_HTTP_DIR}/client.hpp"
   "${DSS_HTTP_DIR}/client.cpp"
+  "${DSS_HTTP_DIR}/basic_http_session.hpp"
 )
 
 add_library(dss_http STATIC ${DSS_HTTP_SOURCES})
@@ -112,7 +116,6 @@ target_link_libraries(dss_http PUBLIC
 if(MSVC)
   target_compile_definitions(dss_http PUBLIC _WIN32_WINNT=0x0601)
 endif()
-
 
 # Creating executable target
 add_executable(dss_daemon "${DSS_SOURCES_DIR}/main.cpp")
