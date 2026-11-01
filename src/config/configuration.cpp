@@ -41,7 +41,10 @@ file_configuration::file_configuration(const nlohmann::json &json) //
 }
 
 data_node_configuration::data_node_configuration(const nlohmann::json &json) //
-    : node_name(json["node-name"]), data_dir(json["data-dir"]), port(json["port"])
+    : node_name(json["node-name"])
+    , data_dir(json["data-dir"])
+    , node_port(json["node-port"])
+    , replication(json["replication"])
 {
 }
 
@@ -54,7 +57,7 @@ name_node_configuration::name_node_configuration(const nlohmann::json &json) //
     : node_name(json["node-name"])
     , data_dir(json["data-dir"])
     , name_dir(json["name-dir"])
-    , port(json["port"])
+    , node_port(json["node-port"])
     , replication(json["replication"])
 {
   if (json.contains("data-nodes"))
