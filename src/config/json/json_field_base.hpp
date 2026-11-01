@@ -84,24 +84,28 @@ public:
   inline json_field_base &operator=(const external_type &rhs)
   {
     field = rhs;
+    return *this;
   }
 
   /// \brief Moving assignment operator for external type.
   inline json_field_base &operator=(external_type &&rhs)
   {
     field = std::move(rhs);
+    return *this;
   }
 
   /// \brief Copying assignment operator for json field structure.
   inline json_field_base &operator=(const json_field_base &rhs)
   {
     field = rhs.field;
+    return *this;
   }
 
   /// \brief Moving assignment operator for json field structure.
   inline json_field_base &operator=(json_field_base &&rhs)
   {
     field = std::move(rhs.field);
+    return *this;
   }
 
   /* Required zone */
@@ -192,7 +196,7 @@ public:
   [[nodiscard]] constexpr inline operator external_type() const
   {
     if constexpr (is_optional)
-      field.value();
+      return field.value();
     else
       return field;
   }
@@ -210,7 +214,7 @@ public:
   [[nodiscard]] constexpr inline operator const external_type &() const
   {
     if constexpr (is_optional)
-      field.value();
+      return field.value();
     else
       return field;
   }
