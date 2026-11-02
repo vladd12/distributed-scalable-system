@@ -104,7 +104,6 @@ set(DSS_HTTP_SOURCES
   "${DSS_HTTP_DIR}/server.cpp"
   "${DSS_HTTP_DIR}/client.hpp"
   "${DSS_HTTP_DIR}/client.cpp"
-  "${DSS_HTTP_DIR}/basic_http_session.hpp"
 )
 
 add_library(dss_http STATIC ${DSS_HTTP_SOURCES})
