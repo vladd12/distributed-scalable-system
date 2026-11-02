@@ -100,6 +100,7 @@ set(DSS_HTTP_SOURCES
   "${DSS_HTTP_DIR}/request.cpp"
   "${DSS_HTTP_DIR}/response.hpp"
   "${DSS_HTTP_DIR}/response.cpp"
+  "${DSS_HTTP_DIR}/session.hpp"
   "${DSS_HTTP_DIR}/server.hpp"
   "${DSS_HTTP_DIR}/server.cpp"
   "${DSS_HTTP_DIR}/client.hpp"

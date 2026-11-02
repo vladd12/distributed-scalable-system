@@ -34,7 +34,7 @@ inline std::string get_random_string(const std::size_t length)
 int main(int argc, char *argv[])
 {
   boost::asio::io_context ctx;
-  http::http_client client(ctx, "localhost", 8080);
+  http_client_t client(ctx, "localhost", 8080);
 
   const std::string data = get_random_string(1024 * 4);
 
