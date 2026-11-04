@@ -94,6 +94,36 @@ std::string_view status_text_for(const status_code code)
   }
 }
 
+std::string &headers_t::operator[](const std::string &key)
+{
+  return unordered_map::operator[](utils::normalize(key));
+}
+
+std::string &headers_t::operator[](std::string &&key)
+{
+  return unordered_map::operator[](utils::normalize(key));
+}
+
+headers_t::iterator headers_t::find(const std::string &key)
+{
+  return unordered_map::find(utils::normalize(key));
+}
+
+headers_t::iterator headers_t::find(std::string &&key)
+{
+  return unordered_map::find(utils::normalize(key));
+}
+
+headers_t::const_iterator headers_t::find(const std::string &key) const
+{
+  return unordered_map::find(utils::normalize(key));
+}
+
+headers_t::const_iterator headers_t::find(std::string &&key) const
+{
+  return unordered_map::find(utils::normalize(key));
+}
+
 headers_t headers_t::parse(std::istream &stream)
 {
   headers_t headers;
@@ -115,8 +145,6 @@ headers_t headers_t::parse(std::istream &stream)
     std::string key = line.substr(0, colon);
     std::string value = line.substr(colon + 1);
 
-    // Lowercase the key for case-insensitive lookup
-    key = std::move(utils::normalize(key));
     // Trim leading whitespace from value
     headers[std::move(key)] = std::move(utils::trim(value));
   }
@@ -126,7 +154,7 @@ headers_t headers_t::parse(std::istream &stream)
 
 std::size_t headers_t::content_length() const
 {
-  const auto find_iter = find("content-length");
+  const auto find_iter = find("Content-Length");
   if (find_iter != cend())
   {
     const auto &value = find_iter->second;

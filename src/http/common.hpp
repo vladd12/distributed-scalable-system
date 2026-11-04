@@ -55,6 +55,16 @@ enum class status_code : std::uint16_t
 /// @brief Type for representation headers in HTTP request/response.
 struct headers_t final : public std::unordered_map<std::string, std::string>
 {
+  /* --------------- operator[] overriding zone --------------- */
+  std::string &operator[](const std::string &key);
+  std::string &operator[](std::string &&key);
+
+  /* ------------------ find overriding zone ------------------ */
+  iterator find(const std::string &key);
+  iterator find(std::string &&key);
+  const_iterator find(const std::string &key) const;
+  const_iterator find(std::string &&key) const;
+
   /// @brief Parsing HTTP headers from the incoming input stream.
   [[nodiscard]] static headers_t parse(std::istream &stream);
 
