@@ -4,7 +4,7 @@
 int main(int argc, char *argv[])
 {
   boost::asio::io_context ctx;
-  http::http_server server(ctx, 8080);
+  http_server_t server(ctx, 8080);
 
   server.route(http::method::GET, "/health", //
       [](const http::request &) {            //

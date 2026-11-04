@@ -128,6 +128,7 @@ private:
 
     if (ec == asio::error::not_found)
     {
+      // TODO: log error
       // derived().on_error(core::http_error("HTTP headers exceed configured buffer size"));
       derived().on_error(asio::error::message_size);
       return;
@@ -146,6 +147,7 @@ private:
     auto delim = std::search(begin, end, crlf.begin(), crlf.end());
     if (delim == end)
     {
+      // TODO: log error
       // derived().on_error(core::http_error("HTTP message has no CRLF CRLF delimiter"));
       derived().on_error(asio::error::invalid_argument);
       return;
@@ -153,6 +155,7 @@ private:
     const std::size_t header_size = static_cast<std::size_t>(std::distance(begin, delim)) + 4;
     if (header_size > m_cfg.max_header_size)
     {
+      // TODO: log error
       // derived().on_error(core::http_error("HTTP headers exceed max_header_size"));
       derived().on_error(asio::error::message_size);
       return;
@@ -167,12 +170,14 @@ private:
       const std::size_t expected = msg.headers.content_length();
       if (expected > m_cfg.max_body_size)
       {
+        // TODO: log error
         // derived().on_error(core::http_error("HTTP body exceeds max_body_size"));
         derived().on_error(asio::error::message_size);
         return;
       }
       if (msg.body.size() > expected)
       {
+        // TODO: log error
         // derived().on_error(core::http_error("HTTP body exceeds Content-Length (pipelining?)"));
         derived().on_error(asio::error::invalid_argument);
         return;
@@ -185,6 +190,7 @@ private:
         derived().on_message_parsed(std::move(msg));
     } catch (const std::exception &ex)
     {
+      // TODO: log error
       // derived().on_error(core::http_error(ex.what()));
       derived().on_error(asio::error::invalid_argument);
     }
