@@ -37,7 +37,7 @@ public:
 
 private:
   void do_accept();
-  response dispatch(const request &req);
+  [[nodiscard]] response dispatch(const request &req);
 
   struct route_key
   {
@@ -48,7 +48,7 @@ private:
 
   struct route_key_hash
   {
-    std::size_t operator()(const route_key &key) const;
+    std::size_t operator()(const route_key &key) const noexcept;
   };
 
   tcp::acceptor m_acceptor;

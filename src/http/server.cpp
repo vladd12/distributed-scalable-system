@@ -113,11 +113,12 @@ response server::dispatch(const request &req)
   return m_default_handler(req);
 }
 
-std::size_t server::route_key_hash::operator()(const route_key &key) const
+std::size_t server::route_key_hash::operator()(const route_key &key) const noexcept
 {
-  auto h1 = std::hash<int> {}(static_cast<int>(key.method_type));
-  auto h2 = std::hash<std::string> {}(key.path);
-  return h1 ^ (h2 << 1);
+  static constexpr std::size_t hash_constant = 0x9e3779b9;
+  std::size_t h1 = std::hash<int> {}(static_cast<int>(key.method_type));
+  std::size_t h2 = std::hash<std::string> {}(key.path);
+  return h1 ^ (h2 + hash_constant + (h1 << 6) + (h1 >> 2)); // better hashing
 }
 
 } // namespace http
