@@ -53,7 +53,7 @@ enum class status_code : std::uint16_t
 [[nodiscard]] std::string_view status_text_for(const status_code code);
 
 /// \brief Type for representation headers in HTTP request/response.
-struct headers_t : public std::unordered_map<std::string, std::string>
+struct headers_t final : public std::unordered_map<std::string, std::string>
 {
   /// \brief Parsing HTTP headers from the incoming input stream.
   [[nodiscard]] static headers_t parse(std::istream &stream);

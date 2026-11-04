@@ -1,8 +1,9 @@
 #include "http/common.hpp"
 
-#include <algorithm>
-#include <charconv>
 #include <core/errors.hpp>
+#include <utils/strings.hpp>
+//
+#include <charconv>
 #include <istream>
 
 namespace http
@@ -115,13 +116,9 @@ headers_t headers_t::parse(std::istream &stream)
     std::string value = line.substr(colon + 1);
 
     // Lowercase the key for case-insensitive lookup
-    std::transform(key.begin(), key.end(), key.begin(), [](unsigned char c) { return std::tolower(c); });
-
+    key = std::move(utils::normalize(key));
     // Trim leading whitespace from value
-    if (auto pos = value.find_first_not_of(' '); pos != std::string::npos)
-      value = value.substr(pos);
-
-    headers[std::move(key)] = std::move(value);
+    headers[std::move(key)] = std::move(utils::trim(value));
   }
 
   return headers;
