@@ -5,7 +5,7 @@
 namespace http
 {
 
-/// \brief Represents a parsed request line from HTTP request.
+/// @brief Represents a parsed request line from HTTP request.
 struct request_line
 {
   method method_type = method::UNKNOWN;
@@ -15,24 +15,24 @@ struct request_line
   [[nodiscard]] static request_line parse(std::istream &stream);
 };
 
-/// \brief Represents a parsed HTTP request.
+/// @brief Represents a parsed HTTP request.
 struct request
 {
   request_line line;
   headers_t headers;
   std::string body;
 
-  /// \brief Serializes the full HTTP request into a string.
+  /// @brief Serializes the full HTTP request into a string.
   [[nodiscard]] std::string serialize() const;
 
-  /// \brief Returns size of remaining data for reading from incoming HTTP request.
-  /// \details Used in HTTP server.
+  /// @brief Returns size of remaining data for reading from incoming HTTP request.
+  /// @details Used in HTTP server.
   [[nodiscard]] std::size_t remaining() const;
 
-  /// \brief Parses a raw HTTP request from an input stream.
+  /// @brief Parses a raw HTTP request from an input stream.
   [[nodiscard]] static request parse(std::istream &stream);
 
-  /// \brief Parses a raw HTTP request from a string (for testing or simple usage).
+  /// @brief Parses a raw HTTP request from a string (for testing or simple usage).
   [[nodiscard]] static request parse(const std::string &data);
 };
 
