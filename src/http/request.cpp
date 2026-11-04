@@ -14,7 +14,7 @@ request_line request_line::parse(std::istream &stream)
 
   // Request line: METHOD PATH VERSION
   if (!std::getline(stream, temp_line))
-    throw core::http_error("response parsing error: empty response");
+    throw core::http_error("request parsing error: empty request");
 
   if (!temp_line.empty() && temp_line.back() == '\r')
     temp_line.pop_back();
@@ -22,7 +22,7 @@ request_line request_line::parse(std::istream &stream)
   std::istringstream request_line(temp_line);
   std::string method_str;
   if (!(request_line >> method_str >> line.path >> line.version))
-    throw core::http_error("response parsing error: invalid status line");
+    throw core::http_error("request parsing error: invalid status line");
 
   line.method_type = string_to_method(method_str);
   return line;
