@@ -10,7 +10,7 @@ namespace core
 
 #if defined(BOOST_WINDOWS_API)
 typedef wchar_t char_type;
-#elif define(BOOST_POSIX_API)
+#elif defined(BOOST_POSIX_API)
 typedef char char_type;
 #else // well, let's do this big mistake
 typedef char char_type;
@@ -24,9 +24,9 @@ using istream = std::basic_istream<char_type>;
 using iostream = std::basic_iostream<char_type>;
 
 #if defined(BOOST_WINDOWS_API)
-ostream &cout = std::wcout;
+inline ostream &cout = std::wcout;
 #else
-ostream &cout = std::cout;
+inline ostream &cout = std::cout;
 #endif
 
 } // namespace core

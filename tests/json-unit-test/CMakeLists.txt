@@ -9,7 +9,7 @@ add_executable(json-unit-test ${JSON_UNIT_TEST_SRC})
 # Registering test for ctest
 add_test(NAME json-unit-test COMMAND json-unit-test)
 # Including some directory
-target_include_directories(json-unit-test PRIVATE "${DCS_SOURCES_DIR}")
+target_include_directories(json-unit-test PRIVATE "${DSS_SOURCES_DIR}")
 # Linking googletest library
 target_link_libraries(json-unit-test PRIVATE
   GTest::GTest

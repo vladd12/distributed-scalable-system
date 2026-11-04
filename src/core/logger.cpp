@@ -67,9 +67,9 @@ void init_logger(const logger_config &cfg)
 spdlog::logger &get_logger()
 {
   auto logger = spdlog::get(logger_name);
-  if (!logger) {
+  if (!logger)
     throw std::runtime_error("Logger not initialized. Call init_logger() first.");
-  }
+
   return *logger;
 }
 

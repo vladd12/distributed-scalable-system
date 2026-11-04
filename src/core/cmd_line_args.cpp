@@ -5,9 +5,9 @@ namespace core
 
 cmd_line_args::cmd_line_args(int argc, char **argv) : m_desc("All options")
 {
-  m_desc.add_options()                                                                                  //
-      ("help", "show daemon's options")                                                                 //
-      ("config", opt::value<std::string>()->default_value("default_config.json"), "config for daemon"); //
+  m_desc.add_options()                                                                                    //
+      ("help", "show daemon's options")                                                                   //
+      ("config,C", opt::value<std::string>()->default_value("default_config.json"), "config for daemon"); //
   auto parsed { std::move(opt::parse_command_line(argc, argv, m_desc)) };
   m_unrecognized = std::move(opt::collect_unrecognized(parsed.options, //
       opt::collect_unrecognized_mode::include_positional));            //

@@ -1,7 +1,10 @@
 #include "http/common.hpp"
 
-#include <algorithm>
-#include <sstream>
+#include <core/errors.hpp>
+#include <utils/strings.hpp>
+//
+#include <charconv>
+#include <istream>
 
 namespace http
 {
@@ -48,44 +51,80 @@ std::string_view method_to_string(const method m)
   }
 }
 
-std::string_view status_text_for(const unsigned int code)
+std::string_view status_text_for(const status_code code)
 {
   switch (code)
   {
-  case 200:
+  case status_code::OK:
     return "OK";
-  case 201:
+  case status_code::CREATED:
     return "Created";
-  case 204:
+  case status_code::NO_CONTENT:
     return "No Content";
-  case 301:
+  case status_code::MOVED_PERMANENTLY:
     return "Moved Permanently";
-  case 302:
+  case status_code::FOUND:
     return "Found";
-  case 304:
+  case status_code::NOT_MODIFIED:
     return "Not Modified";
-  case 400:
+  case status_code::BAD_REQUEST:
     return "Bad Request";
-  case 401:
+  case status_code::UNAUTHORIZED:
     return "Unauthorized";
-  case 403:
+  case status_code::FORBIDDEN:
     return "Forbidden";
-  case 404:
+  case status_code::NOT_FOUND:
     return "Not Found";
-  case 405:
+  case status_code::NOT_ALLOWED:
     return "Method Not Allowed";
-  case 500:
+  case status_code::REQUEST_TIMEOUT:
+    return "Request Timeout";
+  case status_code::LARGE_PAYLOAD:
+    return "Payload Too Large";
+  case status_code::LARGE_HEADERS:
+    return "Request Header Fields Too Large";
+  case status_code::INTERNAL_SERVER_ERROR:
     return "Internal Server Error";
-  case 502:
+  case status_code::BAD_GATEWAY:
     return "Bad Gateway";
-  case 503:
+  case status_code::UNAVAILABLE:
     return "Service Unavailable";
   default:
     return "Unknown";
   }
 }
 
-headers_t parse_headers(std::istream &stream)
+std::string &headers_t::operator[](const std::string &key)
+{
+  return unordered_map::operator[](utils::normalize(key));
+}
+
+std::string &headers_t::operator[](std::string &&key)
+{
+  return unordered_map::operator[](utils::normalize(key));
+}
+
+headers_t::iterator headers_t::find(const std::string &key)
+{
+  return unordered_map::find(utils::normalize(key));
+}
+
+headers_t::iterator headers_t::find(std::string &&key)
+{
+  return unordered_map::find(utils::normalize(key));
+}
+
+headers_t::const_iterator headers_t::find(const std::string &key) const
+{
+  return unordered_map::find(utils::normalize(key));
+}
+
+headers_t::const_iterator headers_t::find(std::string &&key) const
+{
+  return unordered_map::find(utils::normalize(key));
+}
+
+headers_t headers_t::parse(std::istream &stream)
 {
   headers_t headers;
   std::string line;
@@ -106,30 +145,43 @@ headers_t parse_headers(std::istream &stream)
     std::string key = line.substr(0, colon);
     std::string value = line.substr(colon + 1);
 
-    // Lowercase the key for case-insensitive lookup
-    std::transform(key.begin(), key.end(), key.begin(), [](unsigned char c) { return std::tolower(c); });
-
     // Trim leading whitespace from value
-    if (auto pos = value.find_first_not_of(' '); pos != std::string::npos)
-      value = value.substr(pos);
-
-    headers[std::move(key)] = std::move(value);
+    headers[std::move(key)] = std::move(utils::trim(value));
   }
 
   return headers;
 }
 
-std::size_t get_remaining_data_length(const headers_t &headers, const std::string &body) noexcept
+std::size_t headers_t::content_length() const
 {
-  const auto find_iter = headers.find("content-length");
-  if (find_iter != headers.cend())
+  const auto find_iter = find("Content-Length");
+  if (find_iter != cend())
   {
-    const std::size_t expected_content_length = std::stoull(find_iter->second);
-    const std::size_t actual_content_length = body.length();
-    if (actual_content_length < expected_content_length)
-      return expected_content_length - actual_content_length;
+    const auto &value = find_iter->second;
+    if (value.empty())
+      throw core::http_error("request parsing error: invalid 'Content-Length' header");
+
+    std::size_t content_length = 0;
+    const char *begin = value.data();
+    const char *end = value.data() + value.size();
+    const auto [parse_end, parse_error] = std::from_chars(begin, end, content_length);
+    if (parse_error != std::errc() || parse_end != end)
+      throw core::http_error("request parsing error: invalid 'Content-Length' header");
+
+    return content_length;
   }
-  return 0;
+  else
+    return 0;
+}
+
+std::size_t headers_t::remaining(const std::string &body) const
+{
+  const std::size_t expected = content_length();
+  const std::size_t actual = body.length();
+  if (actual < expected)
+    return expected - actual;
+  else
+    return 0;
 }
 
 } // namespace http

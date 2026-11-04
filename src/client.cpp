@@ -1,3 +1,4 @@
+#include <core/conversion.hpp>
 #include <http/client.hpp>
 #include <iostream>
 #include <random>
@@ -33,20 +34,33 @@ inline std::string get_random_string(const std::size_t length)
 int main(int argc, char *argv[])
 {
   boost::asio::io_context ctx;
-  http::http_client client(ctx, "localhost", 8080);
+  http_client_t client(ctx, "localhost", 8080);
 
   const std::string data = get_random_string(1024 * 4);
 
   client.post("/data", {}, data, //
-      [](boost::system::error_code ec, const http::response &resp) {
+      [&client](boost::system::error_code ec, const http::response &resp) {
         if (ec)
+        {
           std::cout << "error code: " << ec.what() << '\n';
+          return;
+        }
 
-        std::cout << "code: " << resp.line.status_code << '\n';
+        std::cout << "code: " << core::to_underlying(resp.line.status_code) << '\n';
         if (resp.body.empty())
           std::cout << "empty body received\n";
         else
           std::cout << "body: " << resp.body << '\n';
+
+        // chained request
+        client.get("/health", {}, //
+            [](boost::system::error_code ec, const http::response &resp) {
+              if (ec)
+              {
+                std::cout << "error code: " << ec.what() << '\n';
+                return;
+              };
+            });
       });
 
   // client.get("/health", {}, //

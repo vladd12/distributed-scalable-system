@@ -1,146 +1,111 @@
 #include "http/server.hpp"
 
+#include <core/errors.hpp>
+#include <http/session.hpp>
+
 namespace http
 {
 
 // ---------------------------------------------------------------------------
-// http_session
+// http::server_session
 // ---------------------------------------------------------------------------
 
-http_session::pointer http_session::create(tcp::socket socket, request_handler handler)
+class server_session final : public session<server_session, request, response>
 {
-  return std::make_shared<http_session>(std::move(socket), std::move(handler));
-}
+public:
+  using read_t = request;
+  using write_t = response;
+  using pointer = std::shared_ptr<server_session>;
 
-http_session::http_session(tcp::socket socket, request_handler handler)
-    : m_socket(std::move(socket)), m_handler(std::move(handler))
-{
-}
-
-void http_session::start()
-{
-  do_read();
-}
-
-void http_session::do_read()
-{
-  auto self = shared_from_this();
-  asio::async_read_until(m_socket, m_buffer, "\r\n\r\n", //
-      [self](boost::system::error_code ec, std::size_t bytes_transferred) {
-        self->on_request_parse(ec, bytes_transferred);
-      });
-}
-
-void http_session::do_remaining_read(const std::size_t remaining)
-{
-  auto self = shared_from_this();
-  asio::async_read(m_socket, m_buffer, asio::transfer_exactly(remaining), //
-      [self](boost::system::error_code ec, std::size_t bytes_transferred) {
-        self->on_remaining_data_read(ec, bytes_transferred);
-      });
-}
-
-void http_session::on_request_parse(boost::system::error_code ec, std::size_t bytes_transferred)
-{
-  if (ec)
-    return;
-
-  try
+  [[nodiscard]] static pointer create(tcp::socket socket, request_handler handler, http_configuration cfg = {})
   {
-    std::istream stream(&m_buffer);
-    m_request = std::move(request::parse(stream));
-
-    // content length request body diff check
-    const std::size_t remaining = m_request.remaining();
-    if (remaining != 0) // need reed more data
-    {
-      do_remaining_read(remaining);
-    }
-    else // no need reed more data
-    {
-      process_request();
-      do_write();
-    }
-  } catch (...) /// TODO: realize that we must catch different errors from different parts of application
-  {
-    m_response_data = response::text(400, "Bad Request").serialize();
-    do_write();
+    return std::shared_ptr<server_session>(new server_session(std::move(socket), std::move(handler), std::move(cfg)));
   }
-}
 
-void http_session::on_remaining_data_read(boost::system::error_code ec, std::size_t bytes_transferred)
-{
-  if (ec)
-    return;
-
-  std::string_view view(static_cast<std::string_view::const_pointer>(m_buffer.data().data()), m_buffer.data().size());
-  m_request.body += view;
-  process_request();
-  do_write();
-}
-
-void http_session::process_request()
-{
-  try
+  void start()
   {
-    m_response_data = std::move(m_handler(m_request).serialize());
-  } catch (...) /// TODO: Logic exceptions must be here
-  {
-    m_response_data = response::text(500, "Internal Server Error").serialize();
+    do_read();
   }
-}
 
-void http_session::do_write()
-{
-  auto self = shared_from_this();
-  asio::async_write(m_socket, asio::buffer(m_response_data), [self](boost::system::error_code ec, std::size_t) {
-    if (!ec)
+  // --- hooks from http_session ---
+
+  void on_message_parsed(read_t req)
+  {
+    auto it = req.headers.find("connection");
+    m_keep_alive = !(it != req.headers.end() && it->second == "close");
+
+    write_t resp;
+    try
     {
-      self->shutdown();
+      resp = m_handler(req);
+    } catch (const std::exception &ex)
+    {
+      resp = response::text(status_code::INTERNAL_SERVER_ERROR, ex.what());
+      m_keep_alive = false;
     }
-  });
-}
 
-void http_session::shutdown()
-{
-  boost::system::error_code shutdown_ec;
-  m_socket.shutdown(tcp::socket::shutdown_both, shutdown_ec);
-}
+    resp.headers["Connection"] = m_keep_alive ? "keep-alive" : "close";
+    do_write(resp);
+  }
+
+  void on_write_complete()
+  {
+    if (m_keep_alive)
+      do_read();
+    else
+      shutdown();
+  }
+
+  void on_error(boost::system::error_code)
+  {
+    shutdown();
+  }
+
+private:
+  server_session(tcp::socket socket, request_handler handler, http_configuration cfg)
+      : session(std::move(socket), std::move(cfg)), m_handler(std::move(handler))
+  {
+  }
+
+  request_handler m_handler;
+};
 
 // ---------------------------------------------------------------------------
-// http_server
+// http::server
 // ---------------------------------------------------------------------------
 
-http_server::http_server(asio::io_context &ctx, const std::uint16_t port)
+server::server(asio::io_context &ctx, const std::uint16_t port)
     : m_acceptor(ctx, tcp::endpoint(asio::ip::make_address("0.0.0.0"), port))
 {
-  m_default_handler = [](const request &) { return response::text(404, "Not Found"); };
+  m_default_handler = [](const request &) { return response::text(status_code::NOT_FOUND, "Not Found"); };
   do_accept();
 }
 
-void http_server::route(method m, const std::string &path, request_handler handler)
+void server::route(method m, const std::string &path, request_handler handler)
 {
   m_routes[route_key { m, path }] = std::move(handler);
 }
 
-void http_server::set_default_handler(request_handler handler)
+void server::set_default_handler(request_handler handler)
 {
   m_default_handler = std::move(handler);
 }
 
-void http_server::do_accept()
+void server::do_accept()
 {
   m_acceptor.async_accept([this](boost::system::error_code ec, tcp::socket socket) {
+    if (ec == asio::error::operation_aborted)
+      return;
     if (!ec)
     {
       auto handler = [this](const request &req) { return dispatch(req); };
-      http_session::create(std::move(socket), handler)->start();
+      server_session::create(std::move(socket), handler)->start();
     }
     do_accept();
   });
 }
 
-response http_server::dispatch(const request &req)
+response server::dispatch(const request &req)
 {
   auto it = m_routes.find(route_key { req.line.method_type, req.line.path });
   if (it != m_routes.end())
@@ -148,11 +113,12 @@ response http_server::dispatch(const request &req)
   return m_default_handler(req);
 }
 
-std::size_t http_server::route_key_hash::operator()(const route_key &key) const
+std::size_t server::route_key_hash::operator()(const route_key &key) const noexcept
 {
-  auto h1 = std::hash<int> {}(static_cast<int>(key.method_type));
-  auto h2 = std::hash<std::string> {}(key.path);
-  return h1 ^ (h2 << 1);
+  static constexpr std::size_t hash_constant = 0x9e3779b9;
+  std::size_t h1 = std::hash<int> {}(static_cast<int>(key.method_type));
+  std::size_t h2 = std::hash<std::string> {}(key.path);
+  return h1 ^ (h2 + hash_constant + (h1 << 6) + (h1 >> 2)); // better hashing
 }
 
 } // namespace http

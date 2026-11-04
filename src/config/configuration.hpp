@@ -64,9 +64,12 @@ struct file_configuration
 
 struct data_node_configuration
 {
-  std::string node_name; ///< Unique identifier for the data node
-  std::string data_dir;  ///< Local directory where this node stores data
-  std::uint16_t port;    ///< Port number for the data node
+  std::string node_name;     ///< Unique identifier for the data node
+  std::string data_dir;      ///< Local directory where this node stores data
+  std::uint16_t node_port;   ///< Port number for the data node
+  std::uint32_t replication; ///< How many copies we try to have at all times. The
+                             ///< actual number of replications is at max the number
+                             ///< of datanodes in the cluster.
 
   explicit data_node_configuration(const nlohmann::json &json);
 };
@@ -84,7 +87,7 @@ struct name_node_configuration
   std::string node_name;                           ///< Unique identifier for the name node
   std::string data_dir;                            ///< Local directory where this node stores data
   std::string name_dir;                            ///< Local directory where name node stores metadata
-  std::uint16_t port;                              ///< Port number for the name node
+  std::uint16_t node_port;                         ///< Port number for the name node
   std::uint32_t replication;                       ///< How many copies we try to have at all times. The
                                                    ///< actual number of replications is at max the number
                                                    ///< of datanodes in the cluster.

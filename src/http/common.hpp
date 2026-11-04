@@ -8,7 +8,7 @@
 namespace http
 {
 
-/// \brief Supported HTTP request methods.
+/// @brief Supported HTTP request methods.
 enum class method
 {
   GET,
@@ -21,24 +21,61 @@ enum class method
   UNKNOWN
 };
 
-/// \brief Converts a string to an HTTP method.
-method string_to_method(const std::string_view str);
+/// @brief Representation of HTTP response code.
+enum class status_code : std::uint16_t
+{
+  OK = 200,
+  CREATED = 201,
+  NO_CONTENT = 204,
+  MOVED_PERMANENTLY = 301,
+  FOUND = 302,
+  NOT_MODIFIED = 304,
+  BAD_REQUEST = 400,
+  UNAUTHORIZED = 401,
+  FORBIDDEN = 403,
+  NOT_FOUND = 404,
+  NOT_ALLOWED = 405,
+  REQUEST_TIMEOUT = 408,
+  LARGE_PAYLOAD = 413,
+  LARGE_HEADERS = 431,
+  INTERNAL_SERVER_ERROR = 500,
+  BAD_GATEWAY = 502,
+  UNAVAILABLE = 503,
+};
 
-/// \brief Converts an HTTP method to its string representation.
-std::string_view method_to_string(const method m);
+/// @brief Converts a string to an HTTP method.
+[[nodiscard]] method string_to_method(const std::string_view str);
 
-/// \brief Returns a standard reason phrase for the given HTTP status code.
-std::string_view status_text_for(const unsigned int code);
+/// @brief Converts an HTTP method to its string representation.
+[[nodiscard]] std::string_view method_to_string(const method m);
 
-/// \brief Type for representation headers in HTTP request/response.
-using headers_t = std::unordered_map<std::string, std::string>;
+/// @brief Returns a standard reason phrase for the given HTTP status code.
+[[nodiscard]] std::string_view status_text_for(const status_code code);
 
-/// \brief Parsing HTTP headers from the incoming input stream.
-headers_t parse_headers(std::istream &stream);
+/// @brief Type for representation headers in HTTP request/response.
+struct headers_t final : public std::unordered_map<std::string, std::string>
+{
+  /* --------------- operator[] overriding zone --------------- */
+  std::string &operator[](const std::string &key);
+  std::string &operator[](std::string &&key);
 
-/// \brief   Compares the expected content length from headers with the actual size of bofy for HTTP requests/responses.
-/// \details Used as common part in HTTP requests/responses.
-std::size_t get_remaining_data_length(const headers_t &headers, const std::string &body) noexcept;
+  /* ------------------ find overriding zone ------------------ */
+  iterator find(const std::string &key);
+  iterator find(std::string &&key);
+  const_iterator find(const std::string &key) const;
+  const_iterator find(std::string &&key) const;
+
+  /// @brief Parsing HTTP headers from the incoming input stream.
+  [[nodiscard]] static headers_t parse(std::istream &stream);
+
+  /// @brief Returns value of the "Content-Length" HTTP header.
+  [[nodiscard]] std::size_t content_length() const;
+
+  /// @brief   Compares the expected content length from HTTP headers
+  ///          with the actual size of bofy for HTTP requests/responses.
+  /// @details Used as common part in HTTP requests/responses.
+  [[nodiscard]] std::size_t remaining(const std::string &body) const;
+};
 
 constexpr inline std::string_view http_version = "HTTP/1.1";
 

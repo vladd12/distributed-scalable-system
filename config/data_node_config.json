@@ -26,7 +26,8 @@
         "data-node": {
             "node-name": "datanode_1",
             "node-port": 50011,
-            "data-dir": "/tmp/dcs/dfs/data"
+            "data-dir": "/tmp/dcs/dfs/data",
+            "replication": 3
         }
     },
     "io": {
