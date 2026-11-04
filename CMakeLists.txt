@@ -50,11 +50,20 @@ set(DSS_CORE_SOURCES
 
 add_library(dss_core STATIC ${DSS_CORE_SOURCES})
 target_include_directories(dss_core PUBLIC "${DSS_SOURCES_DIR}")
-target_link_libraries(dss_core PUBLIC
-  Boost::program_options
-  spdlog::spdlog
-  dss_config
+target_link_libraries(dss_core
+  PUBLIC
+    Boost::program_options
+    spdlog::spdlog
+    dss_config
 )
+
+set(DSS_UTILS_DIR "${DSS_SOURCES_DIR}/utils")
+set(DSS_UTILS_SOURCES
+  "${DSS_UTILS_DIR}/strings.hpp"
+  "${DSS_UTILS_DIR}/strings.cpp"
+)
+add_library(dss_utils STATIC ${DSS_UTILS_SOURCES})
+target_include_directories(dss_utils PUBLIC "${DSS_SOURCES_DIR}")
 
 set(DSS_DFS_DIR "${DSS_SOURCES_DIR}/dfs")
 set(DSS_DFS_SOURCES
@@ -80,13 +89,14 @@ set(DSS_FS_SOURCES
 
 add_library(dss_fs STATIC ${DSS_FS_SOURCES})
 target_include_directories(dss_fs PUBLIC "${DSS_SOURCES_DIR}")
-target_link_libraries(dss_fs PUBLIC
-  Boost::filesystem
-  Boost::iostreams
-  fmt::fmt
-  dss_config
-  dss_core
-  dss_dfs
+target_link_libraries(dss_fs
+  PUBLIC
+    Boost::filesystem
+    Boost::iostreams
+    fmt::fmt
+    dss_config
+    dss_core
+    dss_dfs
 )
 if(MSVC)
   target_compile_definitions(dss_fs PRIVATE _WIN32_WINNT=0x0601)
@@ -109,9 +119,11 @@ set(DSS_HTTP_SOURCES
 
 add_library(dss_http STATIC ${DSS_HTTP_SOURCES})
 target_include_directories(dss_http PUBLIC "${DSS_SOURCES_DIR}")
-target_link_libraries(dss_http PUBLIC
-  Boost::headers
-  dss_core
+target_link_libraries(dss_http
+  PUBLIC
+    Boost::headers
+    dss_core
+    dss_utils
 )
 if(MSVC)
   target_compile_definitions(dss_http PUBLIC _WIN32_WINNT=0x0601)
@@ -120,9 +132,10 @@ endif()
 # Creating executable target
 add_executable(dss_daemon "${DSS_SOURCES_DIR}/main.cpp")
 target_include_directories(dss_daemon PRIVATE "${DSS_SOURCES_DIR}")
-target_link_libraries(dss_daemon PRIVATE
-  dss_fs
-  dss_http
+target_link_libraries(dss_daemon
+  PRIVATE
+    dss_fs
+    dss_http
 )
 
 # Creating executable target
