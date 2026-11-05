@@ -39,9 +39,9 @@ std::string response::serialize() const
   for (const auto &[key, value] : headers)
   {
     oss << key << ": " << value << "\r\n";
-    if (key == "Content-Length")
+    if (key == "Content-Length" || key == "content-length")
       has_content_length = true;
-    if (key == "Connection")
+    if (key == "Connection" || key == "connection")
       has_connection = true;
   }
 
