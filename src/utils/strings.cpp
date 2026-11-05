@@ -23,7 +23,7 @@ std::string trim(const std::string &in)
   return in.substr(start, end - start + 1);
 }
 
-std::string &trim(std::string &in)
+std::string trim(std::string &&in)
 {
   using size_t = std::string::size_type;
   size_t start = in.find_first_not_of(whitespaces);
@@ -48,7 +48,7 @@ std::string to_lower(const std::string &in)
   return result;
 }
 
-std::string &to_lower(std::string &in)
+std::string to_lower(std::string &&in)
 {
   std::transform(in.begin(), in.end(), in.begin(), [](unsigned char c) { return std::tolower(c); });
   return in;
@@ -59,9 +59,9 @@ std::string normalize(const std::string &in)
   return to_lower(trim(in));
 }
 
-std::string &normalize(std::string &in)
+std::string normalize(std::string &&in)
 {
-  return to_lower(trim(in));
+  return to_lower(std::move(trim(std::move(in))));
 }
 
 } // namespace utils

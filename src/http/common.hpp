@@ -80,6 +80,10 @@ struct headers_t final : public std::unordered_map<std::string, std::string>
   /// @copydoc find(const std::string &)
   const_iterator find(std::string &&key) const;
 
+  /* ---------------- contains overriding zone ---------------- */
+
+  bool contains(const std::string &key) const;
+
   /// @brief   Parses headers from an input stream up to the first empty line.
   /// @details Stops at CRLF CRLF boundary or EOF. Keys are normalized via
   ///          `utils::normalize`; values are trimmed. Lines without `:` are

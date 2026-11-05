@@ -14,7 +14,7 @@ request_line request_line::parse(std::istream &stream)
 
   // Request line: METHOD PATH VERSION
   if (!std::getline(stream, temp_line))
-    throw core::http_error("request parsing error: empty request");
+    throw core::http_error("request line parsing error: empty request");
 
   if (!temp_line.empty() && temp_line.back() == '\r')
     temp_line.pop_back();
@@ -22,7 +22,7 @@ request_line request_line::parse(std::istream &stream)
   std::istringstream request_line(temp_line);
   std::string method_str;
   if (!(request_line >> method_str >> line.path >> line.version))
-    throw core::http_error("request parsing error: invalid status line");
+    throw core::http_error("request line parsing error: invalid status line");
 
   line.method_type = string_to_method(method_str);
   return line;
@@ -33,23 +33,13 @@ std::string request::serialize() const
   std::ostringstream req;
   req << method_to_string(line.method_type) << ' ' << line.path << ' ' << line.version << "\r\n";
 
-  bool has_connection = false;
-  bool has_content_length = false;
   for (const auto &[key, value] : headers)
-  {
     req << key << ": " << value << "\r\n";
-    std::string lkey = key;
-    std::transform(lkey.begin(), lkey.end(), lkey.begin(), [](unsigned char c) { return std::tolower(c); });
-    if (lkey == "connection")
-      has_connection = true;
-    if (lkey == "content-length")
-      has_content_length = true;
-  }
 
-  if (!has_connection)
+  if (!headers.contains("Connection"))
     req << "Connection: close\r\n"; // Simple: close after each request
 
-  if (!has_content_length && !body.empty())
+  if (!headers.contains("Content-Length") && !body.empty())
     req << "Content-Length: " << body.size() << "\r\n";
 
   req << "\r\n";

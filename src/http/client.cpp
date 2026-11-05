@@ -1,6 +1,7 @@
 #include "http/client.hpp"
 
 #include <http/session.hpp>
+#include <utils/strings.hpp>
 
 namespace http
 {
@@ -107,10 +108,10 @@ public:
       return;
     }
 
-    if (!req.headers.contains("host") && !req.headers.contains("Host"))
+    if (!req.headers.contains("Host"))
       req.headers["Host"] = m_host + ":" + std::to_string(m_port);
-    if (!req.headers.contains("connection") && !req.headers.contains("Connection"))
-      req.headers["Connection"] = "keep-alive";
+    if (!req.headers.contains("Connection"))
+      req.headers["Connection"] = "Keep-Alive";
 
     m_callback = std::move(cb);
     do_write(req);
@@ -124,8 +125,10 @@ public:
   ///          may be started from within it (chained requests).
   void on_message_parsed(read_t resp)
   {
-    auto it = resp.headers.find("connection");
-    m_keep_alive = !(it != resp.headers.end() && it->second == "close");
+    m_keep_alive = false;
+    auto it = resp.headers.find("Сonnection");
+    if (it != resp.headers.end())
+      m_keep_alive = utils::to_lower(it->second) != "close";
 
     auto cb = std::move(m_callback);
     m_callback = nullptr;

@@ -101,7 +101,7 @@ std::string &headers_t::operator[](const std::string &key)
 
 std::string &headers_t::operator[](std::string &&key)
 {
-  return unordered_map::operator[](utils::normalize(key));
+  return unordered_map::operator[](std::move(utils::normalize(std::move(key))));
 }
 
 headers_t::iterator headers_t::find(const std::string &key)
@@ -111,7 +111,7 @@ headers_t::iterator headers_t::find(const std::string &key)
 
 headers_t::iterator headers_t::find(std::string &&key)
 {
-  return unordered_map::find(utils::normalize(key));
+  return unordered_map::find(std::move(utils::normalize(std::move(key))));
 }
 
 headers_t::const_iterator headers_t::find(const std::string &key) const
@@ -121,7 +121,12 @@ headers_t::const_iterator headers_t::find(const std::string &key) const
 
 headers_t::const_iterator headers_t::find(std::string &&key) const
 {
-  return unordered_map::find(utils::normalize(key));
+  return unordered_map::find(std::move(utils::normalize(std::move(key))));
+}
+
+bool headers_t::contains(const std::string &key) const
+{
+  return find(key) != end();
 }
 
 headers_t headers_t::parse(std::istream &stream)
