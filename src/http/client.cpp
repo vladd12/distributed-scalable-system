@@ -81,13 +81,13 @@ public:
           // on resolving
           if (ec)
           {
-            self->m_on_conn_callback(std::move(ec));
+            self->m_on_conn_callback(ec);
             return;
           }
           asio::async_connect(self->m_socket, results, //
               [self = self](boost::system::error_code ec, tcp::endpoint) {
                 // on connection
-                self->m_on_conn_callback(std::move(ec));
+                self->m_on_conn_callback(ec);
               });
         });
   }
@@ -149,7 +149,7 @@ public:
     m_callback = nullptr;
     shutdown();
     if (cb)
-      cb(std::move(ec), {});
+      cb(ec, {});
   }
 };
 
@@ -172,25 +172,25 @@ void client::on_connected(on_connect_callback handler)
 
 void client::get(const std::string &path, const headers_t &headers, response_callback handler)
 {
-  request req { method::GET, path, "HTTP/1.1", headers };
+  request req { { method::GET, path, "HTTP/1.1" }, headers, {} };
   async_request(std::move(req), std::move(handler));
 }
 
 void client::post(const std::string &path, const headers_t &headers, const std::string &body, response_callback handler)
 {
-  request req { method::POST, path, "HTTP/1.1", headers, body };
+  request req { { method::POST, path, "HTTP/1.1" }, headers, body };
   async_request(std::move(req), std::move(handler));
 }
 
 void client::put(const std::string &path, const headers_t &headers, const std::string &body, response_callback handler)
 {
-  request req { method::PUT, path, "HTTP/1.1", headers, body };
+  request req { { method::PUT, path, "HTTP/1.1" }, headers, body };
   async_request(std::move(req), std::move(handler));
 }
 
 void client::delete_(const std::string &path, const headers_t &headers, response_callback handler)
 {
-  request req { method::DELETE_, path, "HTTP/1.1", headers };
+  request req { { method::DELETE_, path, "HTTP/1.1" }, headers, {} };
   async_request(std::move(req), std::move(handler));
 }
 

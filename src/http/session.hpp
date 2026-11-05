@@ -121,11 +121,9 @@ protected:
         m_socket, asio::buffer(*payload), [this, self, payload](boost::system::error_code ec, std::size_t) {
           cancel_timer();
           if (ec)
-          {
             derived().on_error(ec);
-            return;
-          }
-          derived().on_write_complete();
+          else
+            derived().on_write_complete();
         });
   }
 
@@ -233,15 +231,14 @@ private:
   void on_body_read(boost::system::error_code ec, read_t msg)
   {
     cancel_timer();
-    if (ec)
+    if (!ec)
     {
-      derived().on_error(ec);
-      return;
+      msg.body.append(asio::buffers_begin(m_buffer.data()), asio::buffers_end(m_buffer.data()));
+      m_buffer.consume(m_buffer.size());
+      derived().on_message_parsed(std::move(msg));
     }
-
-    msg.body.append(asio::buffers_begin(m_buffer.data()), asio::buffers_end(m_buffer.data()));
-    m_buffer.consume(m_buffer.size());
-    derived().on_message_parsed(std::move(msg));
+    else
+      derived().on_error(ec);
   }
 
   /// @brief   Arms the per-operation timeout for the currently pending async op.
@@ -251,11 +248,11 @@ private:
     m_timer.expires_after(m_cfg.io_timeout);
     auto self = derived().shared_from_this();
     m_timer.async_wait([this, self](boost::system::error_code ec) {
-      if (!ec)
-      {
-        shutdown();
-        derived().on_error(asio::error::timed_out);
-      }
+      // normal cancellation — the async op completed successfully
+      if (ec == asio::error::operation_aborted)
+        return;
+      shutdown();
+      derived().on_error(ec ? ec : asio::error::timed_out);
     });
   }
 
