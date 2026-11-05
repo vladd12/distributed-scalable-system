@@ -139,8 +139,8 @@ headers_t headers_t::parse(std::istream &stream)
       break;
 
     auto colon = line.find(':');
-    if (colon == std::string::npos)
-      continue;
+    if (colon == 0 || colon == std::string::npos)
+      throw core::http_error("headers parsing error: invalid header passed");
 
     std::string key = line.substr(0, colon);
     std::string value = line.substr(colon + 1);
@@ -159,14 +159,14 @@ std::size_t headers_t::content_length() const
   {
     const auto &value = find_iter->second;
     if (value.empty())
-      throw core::http_error("request parsing error: invalid 'Content-Length' header");
+      throw core::http_error("headers parsing error: invalid 'Content-Length' header");
 
     std::size_t content_length = 0;
     const char *begin = value.data();
     const char *end = value.data() + value.size();
     const auto [parse_end, parse_error] = std::from_chars(begin, end, content_length);
     if (parse_error != std::errc() || parse_end != end)
-      throw core::http_error("request parsing error: invalid 'Content-Length' header");
+      throw core::http_error("headers parsing error: invalid 'Content-Length' header");
 
     return content_length;
   }
