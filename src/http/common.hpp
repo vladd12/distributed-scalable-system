@@ -1,9 +1,7 @@
 #pragma once
 
-#include <iosfwd> // std::istream
-#include <string>
+#include <chrono>
 #include <string_view>
-#include <unordered_map>
 
 namespace http
 {
@@ -43,7 +41,17 @@ enum class status_code : std::uint16_t
   UNAVAILABLE = 503,
 };
 
-/// @brief Converts a string to an HTTP method.
+/// @brief   Common HTTP session configuration.
+/// @details Used by both client and server sessions.
+struct http_configuration
+{
+  std::chrono::milliseconds io_timeout { 5'000 }; ///< Per-operation timeout
+  std::size_t max_header_size = 16 * 1024;        ///< Max bytes before CRLF CRLF
+  std::size_t max_body_size = 1024 * 1024;        ///< Max body bytes (Content-Length)
+};
+
+/// @brief  Converts a string to an HTTP method.
+/// @return Matching method, or method::UNKNOWN if `str` is not a known method name.
 [[nodiscard]] method string_to_method(const std::string_view str);
 
 /// @brief Converts an HTTP method to its string representation.
@@ -52,31 +60,7 @@ enum class status_code : std::uint16_t
 /// @brief Returns a standard reason phrase for the given HTTP status code.
 [[nodiscard]] std::string_view status_text_for(const status_code code);
 
-/// @brief Type for representation headers in HTTP request/response.
-struct headers_t final : public std::unordered_map<std::string, std::string>
-{
-  /* --------------- operator[] overriding zone --------------- */
-  std::string &operator[](const std::string &key);
-  std::string &operator[](std::string &&key);
-
-  /* ------------------ find overriding zone ------------------ */
-  iterator find(const std::string &key);
-  iterator find(std::string &&key);
-  const_iterator find(const std::string &key) const;
-  const_iterator find(std::string &&key) const;
-
-  /// @brief Parsing HTTP headers from the incoming input stream.
-  [[nodiscard]] static headers_t parse(std::istream &stream);
-
-  /// @brief Returns value of the "Content-Length" HTTP header.
-  [[nodiscard]] std::size_t content_length() const;
-
-  /// @brief   Compares the expected content length from HTTP headers
-  ///          with the actual size of bofy for HTTP requests/responses.
-  /// @details Used as common part in HTTP requests/responses.
-  [[nodiscard]] std::size_t remaining(const std::string &body) const;
-};
-
+/// @brief HTTP version string used in serialized messages.
 constexpr inline std::string_view http_version = "HTTP/1.1";
 
 } // namespace http

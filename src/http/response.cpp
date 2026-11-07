@@ -14,7 +14,7 @@ status_line status_line::parse(std::istream &stream)
 
   // Status line parsing, example: "HTTP/1.1 200 OK"
   if (!std::getline(stream, temp_line))
-    throw core::http_error("response parsing error: empty response");
+    throw core::http_error("status line parsing error: empty response");
 
   if (!temp_line.empty() && temp_line.back() == '\r')
     temp_line.pop_back();
@@ -22,7 +22,7 @@ status_line status_line::parse(std::istream &stream)
   std::istringstream _status_line(temp_line);
   std::uint16_t code;
   if (!(_status_line >> line.version >> code))
-    throw core::http_error("response parsing error: invalid status line");
+    throw core::http_error("status line parsing error: invalid status line");
   line.status_code = core::from_underlying<::http::status_code>(code);
 
   return line;
@@ -34,23 +34,19 @@ std::string response::serialize() const
   oss << line.version << ' ' << core::to_underlying(line.status_code) << ' ' //
       << status_text_for(line.status_code) << "\r\n";
 
-  bool has_content_length = false;
-  bool has_connection = false;
   for (const auto &[key, value] : headers)
-  {
     oss << key << ": " << value << "\r\n";
-    if (key == "Content-Length")
-      has_content_length = true;
-    if (key == "Connection")
-      has_connection = true;
-  }
 
-  if (!has_content_length)
-    oss << "Content-Length: " << body.size() << "\r\n";
-  if (!has_connection)
+  if (!headers.contains("Connection"))
     oss << "Connection: close\r\n";
 
-  oss << "\r\n" << body;
+  if (!headers.contains("Content-Length") && !body.empty())
+    oss << "Content-Length: " << body.size() << "\r\n";
+
+  oss << "\r\n";
+  if (!body.empty())
+    oss << body;
+
   return oss.str();
 }
 

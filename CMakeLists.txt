@@ -106,6 +106,8 @@ set(DSS_HTTP_DIR "${DSS_SOURCES_DIR}/http")
 set(DSS_HTTP_SOURCES
   "${DSS_HTTP_DIR}/common.hpp"
   "${DSS_HTTP_DIR}/common.cpp"
+  "${DSS_HTTP_DIR}/headers.hpp"
+  "${DSS_HTTP_DIR}/headers.cpp"
   "${DSS_HTTP_DIR}/request.hpp"
   "${DSS_HTTP_DIR}/request.cpp"
   "${DSS_HTTP_DIR}/response.hpp"
@@ -137,16 +139,6 @@ target_link_libraries(dss_daemon
     dss_fs
     dss_http
 )
-
-# Creating executable target
-add_executable(dss_client "${DSS_SOURCES_DIR}/client.cpp")
-target_include_directories(dss_client PRIVATE "${DSS_SOURCES_DIR}")
-target_link_libraries(dss_client PRIVATE dss_http)
-
-# Creating executable target
-add_executable(dss_server "${DSS_SOURCES_DIR}/server.cpp")
-target_include_directories(dss_server PRIVATE "${DSS_SOURCES_DIR}")
-target_link_libraries(dss_server PRIVATE dss_http)
 
 # Copy default config after build
 add_custom_command(
