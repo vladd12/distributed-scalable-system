@@ -2,6 +2,7 @@
 
 #include <core/errors.hpp>
 #include <http/session.hpp>
+#include <utils/strings.hpp>
 
 namespace http
 {
@@ -52,8 +53,10 @@ public:
   ///          decision in the response.
   void on_message_parsed(read_t req)
   {
-    auto it = req.headers.find("connection");
-    m_keep_alive = !(it != req.headers.end() && it->second == "close");
+    m_keep_alive = false;
+    auto it = req.headers.find("Connection");
+    if (it != req.headers.end())
+      m_keep_alive = utils::to_lower(it->second) != "close";
 
     write_t resp;
     try

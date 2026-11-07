@@ -82,14 +82,18 @@ public:
           // on resolving
           if (ec)
           {
-            self->m_on_conn_callback(ec);
-            return;
+            if (self->m_on_conn_callback)
+              self->m_on_conn_callback(ec);
           }
-          asio::async_connect(self->m_socket, results, //
-              [self = self](boost::system::error_code ec, tcp::endpoint) {
-                // on connection
-                self->m_on_conn_callback(ec);
-              });
+          else
+          {
+            asio::async_connect(self->m_socket, results, //
+                [self = self](boost::system::error_code ec, tcp::endpoint) {
+                  // on connection
+                  if (self->m_on_conn_callback)
+                    self->m_on_conn_callback(ec);
+                });
+          }
         });
   }
 
@@ -126,7 +130,7 @@ public:
   void on_message_parsed(read_t resp)
   {
     m_keep_alive = false;
-    auto it = resp.headers.find("Сonnection");
+    auto it = resp.headers.find("Connection");
     if (it != resp.headers.end())
       m_keep_alive = utils::to_lower(it->second) != "close";
 

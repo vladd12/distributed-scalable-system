@@ -22,7 +22,7 @@ request_line request_line::parse(std::istream &stream)
   std::istringstream request_line(temp_line);
   std::string method_str;
   if (!(request_line >> method_str >> line.path >> line.version))
-    throw core::http_error("request line parsing error: invalid status line");
+    throw core::http_error("request line parsing error: invalid request line");
 
   line.method_type = string_to_method(method_str);
   return line;
