@@ -115,9 +115,15 @@ public:
 class raw_server_ignore final : public raw_server
 {
 private:
-  void write(std::shared_ptr<tcp::socket>) override
+  std::vector<std::shared_ptr<tcp::socket>> m_hung; ///< Sockets held open to force client timeout.
+  std::mutex m_hung_mutex;                          ///< Guards `m_hung` (dtor may race with io thread).
+
+  void write(std::shared_ptr<tcp::socket> shared) override
   {
-    // just do nothing on received request
+    // Keep the socket alive forever (until server is destroyed) so the
+    // client observes a timeout instead of EOF.
+    std::lock_guard<std::mutex> lock(m_hung_mutex);
+    m_hung.push_back(std::move(shared));
   }
 
 public:
