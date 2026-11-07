@@ -19,6 +19,12 @@ private:
 public:
   using const_iterator = storage_t::const_iterator;
   using iterator = storage_t::iterator;
+  using value_type = storage_t::value_type;
+
+  inline headers_t() = default;
+  inline headers_t(std::initializer_list<value_type> init) : storage(init)
+  {
+  }
 
   // clang-format off
   /// @brief Iterator to the first header.

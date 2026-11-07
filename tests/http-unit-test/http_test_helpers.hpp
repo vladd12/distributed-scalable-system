@@ -53,6 +53,7 @@ inline std::string raw_http_request(std::uint16_t port, std::string_view request
 /// @brief Raw TCP server that answers every connection with a fixed payload.
 class raw_server
 {
+protected:
   asio::io_context m_ctx;
   tcp::acceptor m_acceptor;
   std::string m_response;
@@ -71,14 +72,19 @@ class raw_server
       asio::async_read_until(*shared, *buf, "\r\n\r\n", [this, shared, buf](boost::system::error_code ec, std::size_t) {
         if (ec)
           return;
-        asio::async_write(*shared, asio::buffer(m_response), [shared](boost::system::error_code, std::size_t) {
-          boost::system::error_code ignored;
-          shared->shutdown(tcp::socket::shutdown_send, ignored);
-          shared->close(ignored);
-        });
+        write(shared);
       });
       if (!m_stopped)
         do_accept();
+    });
+  }
+
+  virtual void write(std::shared_ptr<tcp::socket> shared)
+  {
+    asio::async_write(*shared, asio::buffer(m_response), [shared](boost::system::error_code, std::size_t) {
+      boost::system::error_code ignored;
+      shared->shutdown(tcp::socket::shutdown_send, ignored);
+      shared->close(ignored);
     });
   }
 
@@ -97,12 +103,26 @@ public:
     });
   }
 
-  ~raw_server()
+  virtual ~raw_server()
   {
     m_stopped = true;
     m_ctx.stop();
     if (m_thread.joinable())
       m_thread.join();
+  }
+};
+
+class raw_server_ignore final : public raw_server
+{
+private:
+  void write(std::shared_ptr<tcp::socket>) override
+  {
+    // just do nothing on received request
+  }
+
+public:
+  raw_server_ignore(std::uint16_t port) : raw_server(port, "")
+  {
   }
 };
 

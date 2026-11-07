@@ -86,3 +86,18 @@ TEST(http_client_test, handles_connection_refused)
 
   EXPECT_TRUE(threw);
 }
+
+TEST(http_client_test, times_out_when_server_silent)
+{
+  const auto port = next_port();
+  raw_server_ignore srv(port);
+
+  asio::io_context ctx;
+  http::client cli(ctx, "127.0.0.1", port, http::client::connect_type::sync);
+
+  boost::system::error_code got;
+  cli.get("/", {}, [&](boost::system::error_code ec, const auto &) { got = ec; });
+  ctx.run();
+
+  EXPECT_EQ(got, asio::error::timed_out);
+}

@@ -19,9 +19,9 @@ using tcp = asio::ip::tcp;
 /// @details Used by both client and server sessions.
 struct http_configuration
 {
-  std::chrono::milliseconds io_timeout { 10'000 }; ///< Per-operation timeout
-  std::size_t max_header_size = 16 * 1024;         ///< Max bytes before CRLF CRLF
-  std::size_t max_body_size = 1024 * 1024;         ///< Max body bytes (Content-Length)
+  std::chrono::milliseconds io_timeout { 2'000 }; ///< Per-operation timeout
+  std::size_t max_header_size = 16 * 1024;        ///< Max bytes before CRLF CRLF
+  std::size_t max_body_size = 1024 * 1024;        ///< Max body bytes (Content-Length)
 };
 
 /// @brief   Shared HTTP/1.1 state machine, parameterized by role.
