@@ -140,16 +140,6 @@ target_link_libraries(dss_daemon
     dss_http
 )
 
-# Creating executable target
-add_executable(dss_client "${DSS_SOURCES_DIR}/client.cpp")
-target_include_directories(dss_client PRIVATE "${DSS_SOURCES_DIR}")
-target_link_libraries(dss_client PRIVATE dss_http)
-
-# Creating executable target
-add_executable(dss_server "${DSS_SOURCES_DIR}/server.cpp")
-target_include_directories(dss_server PRIVATE "${DSS_SOURCES_DIR}")
-target_link_libraries(dss_server PRIVATE dss_http)
-
 # Copy default config after build
 add_custom_command(
   TARGET dss_daemon POST_BUILD COMMAND
