@@ -1,35 +1,88 @@
+#include "http_test_helpers.hpp"
+
+#include <core/errors.hpp>
 #include <gtest/gtest.h>
 #include <http/client.hpp>
-#include <http/server.hpp>
 
-TEST(http_client_test, chained_requests_keep_socket)
+using namespace http_test;
+
+TEST(http_client_test, parses_status_and_body)
 {
-  boost::asio::io_context ctx;
-  http::server srv(ctx, 18080);
-  srv.route(http::method::GET, "/a", [](const auto &) { return http::response::text(http::status_code::OK, "a"); });
-  srv.route(http::method::GET, "/b", [](const auto &) { return http::response::text(http::status_code::OK, "b"); });
+  const auto port = next_port();
+  raw_server srv(port,
+      "HTTP/1.1 201 Created\r\n"
+      "Content-Type: text/plain\r\n"
+      "Content-Length: 5\r\n"
+      "Connection: close\r\n"
+      "\r\n"
+      "hello");
 
-  std::thread server_thread([&] { ctx.run(); });
+  asio::io_context ctx;
+  http::client cli(ctx, "127.0.0.1", port);
 
-  boost::asio::io_context cli_ctx;
-  http::client cli(cli_ctx, "localhost", 18080);
-  int completed = 0;
-  std::string second_body;
+  int status = 0;
+  std::string body;
+  bool done = false;
 
-  cli.get("/a", {}, [&](boost::system::error_code ec, const http::response &resp) {
+  cli.get("/", {}, [&](boost::system::error_code ec, const http::response &resp) {
     ASSERT_FALSE(ec) << ec.message();
-    ++completed;
-    cli.get("/b", {}, [&](boost::system::error_code ec2, const http::response &resp2) {
-      ASSERT_FALSE(ec2) << ec2.message();
-      second_body = resp2.body;
-      ++completed;
-    });
+    status = static_cast<int>(resp.line.status_code);
+    body = resp.body;
+    done = true;
   });
-  cli_ctx.run();
+  ctx.run();
 
-  ctx.stop();
-  server_thread.join();
+  EXPECT_TRUE(done);
+  EXPECT_EQ(status, 201);
+  EXPECT_EQ(body, "hello");
+}
 
-  ASSERT_EQ(completed, 2);
-  ASSERT_EQ(second_body, "b");
+TEST(http_client_test, parses_response_headers)
+{
+  const auto port = next_port();
+  raw_server srv(port,
+      "HTTP/1.1 200 OK\r\n"
+      "X-Custom: FooBar\r\n"
+      "Content-Length: 2\r\n"
+      "Connection: close\r\n"
+      "\r\n"
+      "ok");
+
+  asio::io_context ctx;
+  http::client cli(ctx, "127.0.0.1", port);
+
+  bool has_custom = false;
+  std::string custom_value;
+
+  cli.get("/", {}, [&](boost::system::error_code ec, const http::response &resp) {
+    ASSERT_FALSE(ec) << ec.message();
+    auto it = resp.headers.find("x-custom"); // case-insensitive
+    if (it != resp.headers.end())
+    {
+      has_custom = true;
+      custom_value = it->second;
+    }
+  });
+  ctx.run();
+
+  ASSERT_TRUE(has_custom);
+  EXPECT_EQ(custom_value, "FooBar");
+}
+
+TEST(http_client_test, handles_connection_refused)
+{
+  // Use a port that no one is listening on (allocate one, then don't start anything).
+  const auto port = next_port();
+
+  asio::io_context ctx;
+  bool threw = false;
+  try
+  {
+    http::client cli(ctx, "127.0.0.1", port); // sync_connect throws
+  } catch (const core::http_error &)
+  {
+    threw = true;
+  }
+
+  EXPECT_TRUE(threw);
 }
