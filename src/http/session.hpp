@@ -15,15 +15,6 @@ namespace http
 namespace asio = boost::asio;
 using tcp = asio::ip::tcp;
 
-/// @brief   Common HTTP session configuration.
-/// @details Used by both client and server sessions.
-struct http_configuration
-{
-  std::chrono::milliseconds io_timeout { 2'000 }; ///< Per-operation timeout
-  std::size_t max_header_size = 16 * 1024;        ///< Max bytes before CRLF CRLF
-  std::size_t max_body_size = 1024 * 1024;        ///< Max body bytes (Content-Length)
-};
-
 /// @brief   Shared HTTP/1.1 state machine, parameterized by role.
 /// @tparam  Derived  CRTP-derived session (client_session or server_session).
 /// @tparam  R        Fully-parsed read message type (request for server, response for client).

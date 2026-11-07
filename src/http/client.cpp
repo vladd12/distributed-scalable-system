@@ -41,7 +41,7 @@ public:
   /// @param conn_type sync or async connect strategy.
   /// @param cfg       Session configuration.
   [[nodiscard]] static pointer create(asio::io_context &ctx, const std::string &host, const std::uint16_t port,
-      const connect_type conn_type, http_configuration cfg = {})
+      const connect_type conn_type, http_configuration cfg)
   {
     return std::shared_ptr<client_session>(new client_session(ctx, host, port, conn_type, std::move(cfg)));
   }
@@ -164,8 +164,9 @@ public:
 // http::client
 // ---------------------------------------------------------------------------
 
-client::client(asio::io_context &ctx, const std::string &host, const std::uint16_t port, const connect_type conn_type)
-    : m_host(host), m_session(client_session::create(ctx, host, port, conn_type))
+client::client(asio::io_context &ctx, const std::string &host, const std::uint16_t port, const connect_type conn_type,
+    http_configuration cfg)
+    : m_host(host), m_session(client_session::create(ctx, host, port, conn_type, std::move(cfg)))
 {
   if (m_session->get_connect_type() == connect_type::sync)
     m_session->sync_connect();

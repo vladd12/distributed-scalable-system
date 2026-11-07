@@ -30,7 +30,7 @@ public:
   /// @param  ctx  The io_context that drives async operations.
   /// @param  port  The TCP port to listen on (all interfaces, 0.0.0.0).
   /// @throws boost::system::system_error if the port cannot be bound (e.g. busy).
-  explicit server(asio::io_context &ctx, const std::uint16_t port);
+  explicit server(asio::io_context &ctx, const std::uint16_t port, http_configuration cfg = {});
 
   // To avoid copy client objects.
   server(const server &) = delete;
@@ -84,6 +84,7 @@ private:
   tcp::acceptor m_acceptor;                                                ///< Listening socket (0.0.0.0).
   std::unordered_map<route_key, request_handler, route_key_hash> m_routes; ///< Routes by (method, path).
   request_handler m_default_handler;                                       ///< Fallback if no route matches.
+  http_configuration m_cfg;                                                ///< HTTP configuration for server sessions.
 };
 
 } // namespace http

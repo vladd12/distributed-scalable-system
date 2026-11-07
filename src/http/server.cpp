@@ -33,7 +33,7 @@ public:
   /// @param socket  Socket returned by acceptor (moved in).
   /// @param handler Request handler to dispatch to.
   /// @param cfg     Session configuration.
-  [[nodiscard]] static pointer create(tcp::socket socket, request_handler handler, http_configuration cfg = {})
+  [[nodiscard]] static pointer create(tcp::socket socket, request_handler handler, http_configuration cfg)
   {
     return std::shared_ptr<server_session>(new server_session(std::move(socket), std::move(handler), std::move(cfg)));
   }
@@ -92,8 +92,8 @@ public:
 // http::server
 // ---------------------------------------------------------------------------
 
-server::server(asio::io_context &ctx, const std::uint16_t port)
-    : m_acceptor(ctx, tcp::endpoint(asio::ip::make_address("0.0.0.0"), port))
+server::server(asio::io_context &ctx, const std::uint16_t port, http_configuration cfg)
+    : m_acceptor(ctx, tcp::endpoint(asio::ip::make_address("0.0.0.0"), port)), m_cfg(std::move(cfg))
 {
   m_default_handler = [](const request &) { return response::text(status_code::NOT_FOUND, "Not Found"); };
   do_accept();
@@ -117,7 +117,7 @@ void server::do_accept()
     if (!ec)
     {
       auto handler = [this](const request &req) { return dispatch(req); };
-      server_session::create(std::move(socket), handler)->start();
+      server_session::create(std::move(socket), handler, m_cfg)->start();
     }
     do_accept();
   });

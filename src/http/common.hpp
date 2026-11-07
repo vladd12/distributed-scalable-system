@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <string_view>
 
 namespace http
@@ -38,6 +39,15 @@ enum class status_code : std::uint16_t
   INTERNAL_SERVER_ERROR = 500,
   BAD_GATEWAY = 502,
   UNAVAILABLE = 503,
+};
+
+/// @brief   Common HTTP session configuration.
+/// @details Used by both client and server sessions.
+struct http_configuration
+{
+  std::chrono::milliseconds io_timeout { 5'000 }; ///< Per-operation timeout
+  std::size_t max_header_size = 16 * 1024;        ///< Max bytes before CRLF CRLF
+  std::size_t max_body_size = 1024 * 1024;        ///< Max body bytes (Content-Length)
 };
 
 /// @brief  Converts a string to an HTTP method.

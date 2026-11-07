@@ -54,7 +54,7 @@ public:
   /// @throws core::http_error if conn_type == sync and connect fails.
   /// @throws std::bad_alloc / boost errors possibly propagated from asio on async.
   explicit client(asio::io_context &ctx, const std::string &host, const std::uint16_t port,
-      const connect_type conn_type = connect_type::sync);
+      const connect_type conn_type = connect_type::sync, http_configuration cfg = {});
 
   // To avoid copy client objects.
   client(const client &) = delete;

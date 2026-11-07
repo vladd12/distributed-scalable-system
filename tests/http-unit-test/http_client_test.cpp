@@ -93,7 +93,8 @@ TEST(http_client_test, times_out_when_server_silent)
   raw_server_ignore srv(port);
 
   asio::io_context ctx;
-  http::client cli(ctx, "127.0.0.1", port, http::client::connect_type::sync);
+  http::http_configuration cfg { .io_timeout = std::chrono::milliseconds(200) };
+  http::client cli(ctx, "127.0.0.1", port, http::client::connect_type::sync, std::move(cfg));
 
   boost::system::error_code got;
   cli.get("/", {}, [&](boost::system::error_code ec, const auto &) { got = ec; });
