@@ -38,3 +38,40 @@ TEST(http_headers_test, parse_test_02)
 
   ASSERT_EQ(headers.size(), 0);
 }
+
+TEST(http_headers_test, case_insensitive_lookup)
+{
+  http::headers_t h;
+  h["Host"] = "localhost";
+  ASSERT_TRUE(h.contains("host"));
+  ASSERT_TRUE(h.contains("HOST"));
+  ASSERT_TRUE(h.contains("Host"));
+  ASSERT_EQ(h.find("HOST")->second, "localhost");
+}
+
+TEST(http_headers_test, operator_brackets_normalizes)
+{
+  http::headers_t h;
+  h["Content-Type"] = "text/plain";
+  h["CONTENT-TYPE"] = "text/html"; // same key after normalization
+  ASSERT_EQ(h.size(), 1u);
+  ASSERT_EQ(h.find("content-type")->second, "text/html");
+}
+
+TEST(http_headers_test, values_are_trimmed)
+{
+  std::istringstream s("X-Test:   spaced value   \r\n\r\n");
+  auto h = http::headers_t::parse(s);
+  ASSERT_EQ(h.find("x-test")->second, "spaced value");
+}
+
+TEST(http_headers_test, iterator_reaches_end)
+{
+  http::headers_t h;
+  h["A"] = "1";
+  h["B"] = "2";
+  int count = 0;
+  for (auto it = h.begin(); it != h.end(); ++it)
+    ++count;
+  ASSERT_EQ(count, 2);
+}

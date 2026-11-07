@@ -8,40 +8,56 @@ namespace http
 {
 
 /// @brief   HTTP headers storage with case-insensitive keys.
-/// @details Extends std::unordered_map<std::string, std::string>, but overrides
-///          operator[] and find() to normalize keys via `utils::normalize`
-///          (trim + lowercase). Values are stored as-is, only keys are normalized.
+/// @details Values are trimmed before stored, only keys are full normalized.
 ///          This matches RFC 7230 §3.2: header field names are case-insensitive.
-struct headers_t final : public std::unordered_map<std::string, std::string>
+class headers_t final
 {
-  /* --------------- operator[] overriding zone --------------- */
+private:
+  using storage_t = std::unordered_map<std::string, std::string>;
+  storage_t storage;
+
+public:
+  using const_iterator = storage_t::const_iterator;
+  using iterator = storage_t::iterator;
+
+  // clang-format off
+  /// @brief Iterator to the first header.
+  [[nodiscard]] inline iterator begin() noexcept { return storage.begin(); }
+  /// @brief Iterator past the last header.
+  [[nodiscard]] inline iterator end() noexcept { return storage.end(); }
+  /// @brief Const iterator to the first header.
+  [[nodiscard]] inline const_iterator begin() const noexcept { return storage.begin(); }
+  /// @brief Const iterator past the last header.
+  [[nodiscard]] inline const_iterator end() const noexcept { return storage.end(); }
+  /// @copydoc begin() const noexcept
+  [[nodiscard]] inline const_iterator cbegin() const noexcept { return storage.cbegin(); }
+  /// @copydoc end() const noexcept
+  [[nodiscard]] inline const_iterator cend() const noexcept { return storage.cend(); }
+
+  /// @brief True if no headers are stored.
+  [[nodiscard]] inline bool empty() const noexcept { return storage.empty(); }
+  /// @brief Number of stored headers.
+  [[nodiscard]] inline std::size_t size() const noexcept { return storage.size(); }
+  /// @brief True if a header with normalized `key` exists.
+  [[nodiscard]] inline bool contains(const std::string &key) const { return find(key) != end(); }
+  // clang-format on
 
   /// @brief   Returns reference to the value for `key` (inserting empty string if absent).
   /// @details `key` is normalized (trim + lowercase) before lookup.
-  std::string &operator[](const std::string &key);
+  [[nodiscard]] std::string &operator[](const std::string &key);
   /// @copydoc operator[](const std::string &)
-  std::string &operator[](std::string &&key);
-
-  /* ------------------ find overriding zone ------------------ */
+  [[nodiscard]] std::string &operator[](std::string &&key);
 
   /// @brief  Finds element with normalized `key`.
   /// @return Iterator to element, or end() if not found.
-  iterator find(const std::string &key);
+  [[nodiscard]] iterator find(const std::string &key);
   /// @copydoc find(const std::string &)
-  iterator find(std::string &&key);
-  /// @copydoc find(const std::string &)
-  const_iterator find(const std::string &key) const;
-  /// @copydoc find(const std::string &)
-  const_iterator find(std::string &&key) const;
-
-  /* ---------------- contains overriding zone ---------------- */
-
-  bool contains(const std::string &key) const;
+  [[nodiscard]] const_iterator find(const std::string &key) const;
 
   /// @brief   Parses headers from an input stream up to the first empty line.
   /// @details Stops at CRLF CRLF boundary or EOF. Keys are normalized via
-  ///          `utils::normalize`; values are trimmed. Lines without `:` are
-  ///          silently skipped. Used by both request and response parsing.
+  ///          `utils::normalize`; values are trimmed. Used by both request
+  ///          and response parsing.
   /// @return  Parsed headers (empty if the first line is already empty).
   [[nodiscard]] static headers_t parse(std::istream &stream);
 

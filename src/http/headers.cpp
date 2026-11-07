@@ -11,37 +11,22 @@ namespace http
 
 std::string &headers_t::operator[](const std::string &key)
 {
-  return unordered_map::operator[](utils::normalize(key));
+  return storage[utils::normalize(key)];
 }
 
 std::string &headers_t::operator[](std::string &&key)
 {
-  return unordered_map::operator[](std::move(utils::normalize(std::move(key))));
+  return storage[utils::normalize(std::move(key))];
 }
 
 headers_t::iterator headers_t::find(const std::string &key)
 {
-  return unordered_map::find(utils::normalize(key));
-}
-
-headers_t::iterator headers_t::find(std::string &&key)
-{
-  return unordered_map::find(std::move(utils::normalize(std::move(key))));
+  return storage.find(utils::normalize(key));
 }
 
 headers_t::const_iterator headers_t::find(const std::string &key) const
 {
-  return unordered_map::find(utils::normalize(key));
-}
-
-headers_t::const_iterator headers_t::find(std::string &&key) const
-{
-  return unordered_map::find(std::move(utils::normalize(std::move(key))));
-}
-
-bool headers_t::contains(const std::string &key) const
-{
-  return find(key) != end();
+  return storage.find(utils::normalize(key));
 }
 
 headers_t headers_t::parse(std::istream &stream)
@@ -66,7 +51,7 @@ headers_t headers_t::parse(std::istream &stream)
     std::string value = line.substr(colon + 1);
 
     // Trim leading whitespace from value
-    headers[std::move(key)] = std::move(utils::trim(value));
+    headers[std::move(key)] = std::move(utils::trim(std::move(value)));
   }
 
   return headers;
