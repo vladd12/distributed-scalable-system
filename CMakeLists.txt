@@ -106,6 +106,8 @@ set(DSS_HTTP_DIR "${DSS_SOURCES_DIR}/http")
 set(DSS_HTTP_SOURCES
   "${DSS_HTTP_DIR}/common.hpp"
   "${DSS_HTTP_DIR}/common.cpp"
+  "${DSS_HTTP_DIR}/headers.hpp"
+  "${DSS_HTTP_DIR}/headers.cpp"
   "${DSS_HTTP_DIR}/request.hpp"
   "${DSS_HTTP_DIR}/request.cpp"
   "${DSS_HTTP_DIR}/response.hpp"

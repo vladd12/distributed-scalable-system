@@ -1,6 +1,7 @@
 #pragma once
 
 #include <http/common.hpp>
+#include <http/headers.hpp>
 
 namespace http
 {

@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include <http/common.hpp>
+#include <http/headers.hpp>
 #include <sstream>
 
 TEST(http_headers_test, parse_test_01)
