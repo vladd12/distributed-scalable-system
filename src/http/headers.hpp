@@ -22,9 +22,7 @@ public:
   using value_type = storage_t::value_type;
 
   inline headers_t() = default;
-  inline headers_t(std::initializer_list<value_type> init) : storage(init)
-  {
-  }
+  headers_t(std::initializer_list<value_type> init_list);
 
   // clang-format off
   /// @brief Iterator to the first header.
