@@ -1,14 +1,17 @@
 #pragma once
 
-#include <boost/asio.hpp>
 #include <http/server.hpp>
+//
+#include <boost/asio.hpp>
 //
 #include <atomic>
 #include <cstdint>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <string_view>
 #include <thread>
+#include <vector>
 
 namespace http_test
 {
@@ -17,14 +20,14 @@ namespace asio = boost::asio;
 using tcp = asio::ip::tcp;
 
 /// @brief Monotonic port allocator so parallel test bodies never collide.
-inline std::uint16_t next_port()
+[[nodiscard]] inline std::uint16_t next_port()
 {
   static std::atomic<std::uint16_t> counter { 19100 };
   return counter.fetch_add(1);
 }
 
 /// @brief Reads from `sock` until EOF or error. Blocks.
-inline std::string read_until_eof(tcp::socket &sock)
+[[nodiscard]] inline std::string read_until_eof(tcp::socket &sock)
 {
   boost::system::error_code ec;
   std::string result;
@@ -41,7 +44,7 @@ inline std::string read_until_eof(tcp::socket &sock)
 
 /// @brief Sends raw `request` bytes and returns whatever the server sends
 ///        until it closes. Assumes the request has `Connection: close`.
-inline std::string raw_http_request(std::uint16_t port, std::string_view request)
+[[nodiscard]] inline std::string raw_http_request(std::uint16_t port, std::string_view request)
 {
   asio::io_context ctx;
   tcp::socket sock(ctx);
@@ -60,7 +63,7 @@ protected:
   std::thread m_thread;
   std::atomic<bool> m_stopped { false };
 
-  void do_accept()
+  inline void do_accept()
   {
     m_acceptor.async_accept([this](boost::system::error_code ec, tcp::socket sock) {
       if (ec)
@@ -89,7 +92,7 @@ protected:
   }
 
 public:
-  raw_server(std::uint16_t port, std::string response)
+  inline raw_server(std::uint16_t port, std::string response)
       : m_acceptor(m_ctx, tcp::endpoint(tcp::v4(), port)), m_response(std::move(response))
   {
     do_accept();
@@ -141,12 +144,17 @@ class server_fixture
   std::uint16_t m_port;
 
 public:
-  explicit server_fixture(std::uint16_t port) : m_port(port)
+  inline explicit server_fixture(std::uint16_t port) : m_port(port)
   {
     m_server = std::make_unique<::http::server>(m_ctx, port);
   }
 
-  void start()
+  inline ~server_fixture()
+  {
+    stop();
+  }
+
+  inline void start()
   {
     m_thread = std::thread([this] {
       try
@@ -158,26 +166,21 @@ public:
     });
   }
 
-  void stop()
+  inline void stop()
   {
     m_ctx.stop();
     if (m_thread.joinable())
       m_thread.join();
   }
 
-  inline ::http::server &get() noexcept
+  [[nodiscard]] inline ::http::server &get() noexcept
   {
     return *m_server;
   }
 
-  inline std::uint16_t port() const noexcept
+  [[nodiscard]] inline std::uint16_t port() const noexcept
   {
     return m_port;
-  }
-
-  inline ~server_fixture()
-  {
-    stop();
   }
 };
 
