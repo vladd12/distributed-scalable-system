@@ -27,3 +27,6 @@
 - `headers_t::content_length` — does not support duplicate headers:
   - If two `Content-Lengths` (attacking vector) arrive, `headers_t` (`std::unordered_map`) will leave the last one. According to RFC 7230, this must be an error. Now it's being silently overwritten.
   - Fix: when duplicating `Content-Length`/`Host` — `throw core::http_error`.
+- `response::serialize` — `200` with empty body does not setup `Content-Length: 0`
+  - If `body.empty()` and there is no `Content-Length`, nothing is written. For `204 No Content` is correct (no body, no `Content-Length`). But for `200 OK` with an empty body, it's wrong: the client must know that there is no body.
+  - According to `RFC 7230 §3.3.2` in the absence of `Content-Length` and `Transfer-Encoding`, the client reads the body before EOF. This means that the client will wait for close, but the server will not close in keep—alive.
