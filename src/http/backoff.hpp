@@ -103,7 +103,7 @@ private:
     if (ec == asio::error::operation_aborted || !m_handler)
       return;
 
-    ++m_current_retry;
+    ++m_current_retry; // SIZE_MAX -> 0 (wrap for unsigned, defined behavior)
     m_strategy.next();
     cleanup_handler_call(ec, false);
   }

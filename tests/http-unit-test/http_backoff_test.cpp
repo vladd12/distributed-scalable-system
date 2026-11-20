@@ -267,3 +267,125 @@ TEST(backoff_waiter_test, empty_handler_throws)
   EXPECT_THROW(waiter->wait(nullptr), core::http_error);
   EXPECT_THROW(waiter->wait({}), core::http_error); // default-constructed std::function
 }
+
+TEST(backoff_waiter_test, give_up_does_not_wait_initial_delay)
+{
+  asio::io_context ctx;
+  // Initial = 5 seconds. If give-up waited for it, this test would take 5s.
+  auto waiter
+      = std::make_shared<details::const_backoff_waiter<std::chrono::microseconds>>(ctx, std::chrono::seconds(5), 0);
+
+  const auto start = std::chrono::steady_clock::now();
+  bool fired = false;
+  waiter->wait([&](auto, bool is_last) {
+    fired = true;
+    EXPECT_TRUE(is_last);
+  });
+  const auto elapsed = std::chrono::steady_clock::now() - start;
+
+  EXPECT_TRUE(fired);
+  EXPECT_LT(elapsed, std::chrono::milliseconds(100)); // way under 5s
+}
+
+TEST(backoff_waiter_test, cancel_after_handler_fired_returns_zero)
+{
+  asio::io_context ctx;
+  auto waiter = details::create_default_const_backoff_waiter(ctx);
+
+  waiter->wait([](auto, auto) {});
+  ctx.run(); // handler already done
+
+  EXPECT_EQ(waiter->cancel(), 0u); // nothing to cancel
+}
+
+TEST(backoff_waiter_test, double_cancel_is_idempotent)
+{
+  asio::io_context ctx;
+  auto waiter = details::create_default_const_backoff_waiter(ctx);
+
+  waiter->wait([](auto, auto) {});
+  EXPECT_EQ(waiter->cancel(), 1u); // first time cancels pending
+  EXPECT_EQ(waiter->cancel(), 0u); // second time - nothing
+  ctx.run();
+}
+
+TEST(backoff_waiter_test, throw_on_double_wait_keeps_pending_alive)
+{
+  asio::io_context ctx;
+  auto waiter = details::create_default_const_backoff_waiter(ctx);
+
+  bool first_fired = false;
+  waiter->wait([&](auto, auto) { first_fired = true; });
+
+  EXPECT_THROW(waiter->wait([](auto, auto) {}), core::http_error);
+
+  ctx.run();
+  EXPECT_TRUE(first_fired); // first handler done, second was discarded
+}
+
+TEST(backoff_waiter_test, max_retries_1_yields_one_retry)
+{
+  asio::io_context ctx;
+  auto waiter = std::make_shared<details::const_backoff_waiter<std::chrono::microseconds>>(ctx, 1us, 1);
+
+  int retries = 0;
+  bool gave_up = false;
+  std::function<void(boost::system::error_code, bool)> h;
+  h = [&](auto, bool is_last) {
+    if (is_last)
+    {
+      gave_up = true;
+      return;
+    }
+    ++retries;
+    waiter->wait(h);
+  };
+  waiter->wait(h);
+  ctx.run();
+
+  EXPECT_EQ(retries, 1);
+  EXPECT_TRUE(gave_up);
+}
+
+TEST(backoff_waiter_test, zero_initial_wait_time)
+{
+  asio::io_context ctx;
+  auto waiter = std::make_shared<details::const_backoff_waiter<std::chrono::microseconds>>(ctx, 0us, 3);
+
+  int retries = 0;
+  bool gave_up = false;
+  std::function<void(boost::system::error_code, bool)> h;
+  h = [&](auto, bool is_last) {
+    if (is_last)
+    {
+      gave_up = true;
+      return;
+    }
+    ++retries;
+    waiter->wait(h);
+  };
+  waiter->wait(h);
+  ctx.run();
+
+  EXPECT_EQ(retries, 3);
+  EXPECT_TRUE(gave_up);
+}
+
+TEST(backoff_waiter_test, reset_after_zero_max_still_gives_up)
+{
+  asio::io_context ctx;
+  auto waiter = std::make_shared<details::const_backoff_waiter<std::chrono::microseconds>>(ctx, 10us, 0);
+
+  int fires = 0;
+  for (int i = 0; i < 3; ++i)
+  {
+    bool is_last = false;
+    waiter->wait([&](auto, bool last) {
+      ++fires;
+      is_last = last;
+    });
+    EXPECT_TRUE(is_last); // every time give-up, because max_retries = 0
+    (void)waiter->reset();
+  }
+  EXPECT_EQ(fires, 3);
+}
