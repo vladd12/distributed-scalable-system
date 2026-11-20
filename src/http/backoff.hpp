@@ -7,7 +7,6 @@
 
 namespace http::details
 {
-
 namespace asio = boost::asio;
 
 static constexpr inline std::size_t default_scale = 5ull;
@@ -25,7 +24,7 @@ public:
   {
   }
 
-  inline Time get_current() const noexcept
+  [[nodiscard]] inline Time get_current() const noexcept
   {
     return m_current;
   }
@@ -52,7 +51,7 @@ public:
   {
   }
 
-  inline Time get_current() const noexcept
+  [[nodiscard]] inline Time get_current() const noexcept
   {
     return m_current;
   }
@@ -82,7 +81,7 @@ private:
   using self_base_t = std::enable_shared_from_this<base_backoff_waiter<Time, Strategy>>;
   using self_base_t::shared_from_this;
 
-  Time m_initial_wait_time;
+  const Time m_initial_wait_time;
   Strategy m_strategy;
   std::size_t m_max_retries;
   std::size_t m_current_retry;
@@ -100,7 +99,7 @@ private:
   inline void on_wait_event(const boost::system::error_code ec)
   {
     // timer canceled or destructed - silence for us
-    if (ec == asio::error::operation_aborted)
+    if (ec == asio::error::operation_aborted || !m_handler)
       return;
 
     ++m_current_retry;
@@ -136,17 +135,17 @@ public:
     }
   }
 
-  inline void cancel() noexcept
+  [[nodiscard]] inline std::size_t cancel() noexcept
   {
     m_handler = nullptr;
-    m_timer.cancel();
+    return m_timer.cancel();
   }
 
-  inline void reset() noexcept
+  [[nodiscard]] inline std::size_t reset() noexcept
   {
-    cancel();
     m_current_retry = 1ull;
     m_strategy.reset(m_initial_wait_time);
+    return cancel();
   }
 };
 
@@ -159,19 +158,19 @@ using scale_backoff_waiter = base_backoff_waiter<Time, scale_strategy<Time, Scal
 template <typename Time> //
 using exponential_backoff_waiter = base_backoff_waiter<Time, exponential_strategy<Time>>;
 
-inline auto create_default_const_backoff_waiter(asio::io_context &ctx)
+[[nodiscard]] inline auto create_default_const_backoff_waiter(asio::io_context &ctx)
 {
   return std::make_shared<const_backoff_waiter<asio::chrono::microseconds>>(
       ctx, default_initial_wait_time, default_max_retries);
 }
 
-inline auto create_default_scale_backoff_waiter(asio::io_context &ctx)
+[[nodiscard]] inline auto create_default_scale_backoff_waiter(asio::io_context &ctx)
 {
   return std::make_shared<scale_backoff_waiter<asio::chrono::microseconds, default_scale>>(
       ctx, default_initial_wait_time, default_max_retries);
 }
 
-inline auto create_default_exponential_backoff_waiter(asio::io_context &ctx)
+[[nodiscard]] inline auto create_default_exponential_backoff_waiter(asio::io_context &ctx)
 {
   return std::make_shared<exponential_backoff_waiter<asio::chrono::microseconds>>(
       ctx, default_initial_wait_time, default_max_retries);
