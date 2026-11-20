@@ -9,6 +9,12 @@
 namespace http
 {
 
+headers_t::headers_t(std::initializer_list<value_type> init_list)
+{
+  for (auto &&[key, value] : init_list)
+    storage.insert({ utils::normalize(key), utils::trim(value) });
+}
+
 std::string &headers_t::operator[](const std::string &key)
 {
   return storage[utils::normalize(key)];

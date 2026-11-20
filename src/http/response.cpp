@@ -63,25 +63,25 @@ response response::simple(const status_code code)
   return resp;
 }
 
-response response::text(const status_code code, const std::string_view &text)
+response response::text(const status_code code, std::string text)
 {
   response resp;
   resp.line.status_code = code;
   resp.line.version = http_version;
   resp.headers["Content-Type"] = "text/plain";
   resp.headers["Content-Length"] = std::to_string(text.size());
-  resp.body = text;
+  resp.body = std::move(text);
   return resp;
 }
 
-response response::json(const status_code code, const std::string_view &json_body)
+response response::json(const status_code code, std::string json_body)
 {
   response resp;
   resp.line.status_code = code;
   resp.line.version = http_version;
   resp.headers["Content-Type"] = "application/json";
   resp.headers["Content-Length"] = std::to_string(json_body.size());
-  resp.body = json_body;
+  resp.body = std::move(json_body);
   return resp;
 }
 

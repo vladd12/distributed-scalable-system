@@ -1,5 +1,6 @@
 #pragma once
 
+#include <http/backoff.hpp>
 #include <http/request.hpp>
 #include <http/response.hpp>
 //
@@ -32,6 +33,8 @@ public:
   /// @throws boost::system::system_error if the port cannot be bound (e.g. busy).
   explicit server(asio::io_context &ctx, const std::uint16_t port, http_configuration cfg = {});
 
+  ~server() noexcept;
+
   // To avoid copy client objects.
   server(const server &) = delete;
   server &operator=(const server &) = delete;
@@ -53,6 +56,9 @@ private:
   ///          The session object is kept alive by the async read chain
   ///          (shared_from_this in session::do_read).
   void do_accept();
+
+  bool is_fatal_accept_error(const boost::system::error_code &ec) const noexcept;
+  bool is_resource_exhaustion(const boost::system::error_code &ec) const noexcept;
 
   /// @brief   Routes a parsed request to the matching handler.
   /// @param   req Parsed request; lookup key is (req.line.method_type, req.line.path).
@@ -85,6 +91,8 @@ private:
   std::unordered_map<route_key, request_handler, route_key_hash> m_routes; ///< Routes by (method, path).
   request_handler m_default_handler;                                       ///< Fallback if no route matches.
   http_configuration m_cfg;                                                ///< HTTP configuration for server sessions.
+  //
+  std::shared_ptr<details::exponential_backoff_waiter<asio::chrono::microseconds>> m_waiter;
 };
 
 } // namespace http

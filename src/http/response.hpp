@@ -52,12 +52,12 @@ struct response
   /// @brief Creates a plain-text response (`Content-Type: text/plain`).
   /// @param code Status code to use.
   /// @param text Body content (copied).
-  [[nodiscard]] static response text(const status_code code, const std::string_view &text);
+  [[nodiscard]] static response text(const status_code code, std::string text);
 
   /// @brief Creates a JSON response (`Content-Type: application/json`).
   /// @param code      Status code to use.
   /// @param json_body Serialized JSON (copied into `body`).
-  [[nodiscard]] static response json(const status_code code, const std::string_view &json_body);
+  [[nodiscard]] static response json(const status_code code, std::string json_body);
 
   /// @brief  Parses a raw HTTP response from an input stream.
   /// @throws core::http_error on malformed status line or headers.
