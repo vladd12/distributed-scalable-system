@@ -103,7 +103,7 @@ server::server(asio::io_context &ctx, const std::uint16_t port, http_configurati
 
 server::~server() noexcept
 {
-  m_waiter->cancel();
+  (void)m_waiter->cancel(); // TODO: logging number of canceled operations
 }
 
 void server::route(method m, const std::string &path, request_handler handler)
@@ -142,7 +142,7 @@ void server::do_accept()
     }
     else
     {
-      m_waiter->reset();
+      (void)m_waiter->reset(); // TODO: logging number of canceled operations
       auto handler = [this](const request &req) { return dispatch(req); };
       server_session::create(std::move(socket), handler, m_cfg)->start();
       do_accept();

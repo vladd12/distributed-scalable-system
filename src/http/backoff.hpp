@@ -82,8 +82,9 @@ private:
   using self_base_t::shared_from_this;
 
   const Time m_initial_wait_time;
+  const std::size_t m_max_retries;
+
   Strategy m_strategy;
-  std::size_t m_max_retries;
   std::size_t m_current_retry;
   asio::steady_timer m_timer;
   backoff_handler m_handler;
@@ -111,8 +112,8 @@ public:
   inline base_backoff_waiter(
       asio::io_context &ctx, const Time initial_wait_time, const std::size_t max_retries) noexcept
       : m_initial_wait_time(initial_wait_time)
-      , m_strategy(m_initial_wait_time)
       , m_max_retries(max_retries)
+      , m_strategy(m_initial_wait_time)
       , m_current_retry(1ull)
       , m_timer(ctx)
   {
@@ -122,6 +123,8 @@ public:
   {
     if (m_handler)
       throw core::http_error("backoff waiter already in wait-state with registered handler");
+    if (!handler)
+      throw core::http_error("backoff waiter: empty handler passed");
 
     m_handler = std::move(handler);
     if (m_current_retry > m_max_retries)
