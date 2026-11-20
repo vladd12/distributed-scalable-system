@@ -93,10 +93,17 @@ public:
 // ---------------------------------------------------------------------------
 
 server::server(asio::io_context &ctx, const std::uint16_t port, http_configuration cfg)
-    : m_acceptor(ctx, tcp::endpoint(asio::ip::make_address("0.0.0.0"), port)), m_cfg(std::move(cfg))
+    : m_acceptor(ctx, tcp::endpoint(asio::ip::make_address("0.0.0.0"), port))
+    , m_cfg(std::move(cfg))
+    , m_waiter(details::create_default_exponential_backoff_waiter(ctx))
 {
   m_default_handler = [](const request &) { return response::text(status_code::NOT_FOUND, "Not Found"); };
   do_accept();
+}
+
+server::~server() noexcept
+{
+  m_waiter->cancel();
 }
 
 void server::route(method m, const std::string &path, request_handler handler)
@@ -114,13 +121,49 @@ void server::do_accept()
   m_acceptor.async_accept([this](boost::system::error_code ec, tcp::socket socket) {
     if (ec == asio::error::operation_aborted)
       return;
-    if (!ec)
+
+    if (ec)
     {
+      if (is_fatal_accept_error(ec)) // TODO: log fatal accept error
+        return;
+      else if (is_resource_exhaustion(ec))
+      {
+        // wait some time with backoff logic and try accept another one connection
+        m_waiter->wait([this](const boost::system::error_code ec, const bool is_last_try) {
+          // case where timer is broken
+          if (ec)
+            return;
+
+          if (!is_last_try)
+            do_accept();
+        });
+      }
+      // skip another errors: connection_aborted, connection_reset, etc...
+    }
+    else
+    {
+      m_waiter->reset();
       auto handler = [this](const request &req) { return dispatch(req); };
       server_session::create(std::move(socket), handler, m_cfg)->start();
+      do_accept();
     }
-    do_accept();
   });
+}
+
+bool server::is_fatal_accept_error(const boost::system::error_code &ec) const noexcept
+{
+  // clang-format off
+  return ec == asio::error::bad_descriptor               ||
+         ec == asio::error::access_denied                ||
+         ec == asio::error::address_family_not_supported ||
+         ec == asio::error::operation_not_supported      ||
+         ec == asio::error::fault;
+  // clang-format on
+}
+
+bool server::is_resource_exhaustion(const boost::system::error_code &ec) const noexcept
+{
+  return ec == asio::error::no_descriptors; // EMFILE
 }
 
 response server::dispatch(const request &req)

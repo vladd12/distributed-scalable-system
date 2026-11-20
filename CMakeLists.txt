@@ -105,7 +105,6 @@ endif()
 set(DSS_HTTP_DIR "${DSS_SOURCES_DIR}/http")
 set(DSS_HTTP_SOURCES
   "${DSS_HTTP_DIR}/backoff.hpp"
-  "${DSS_HTTP_DIR}/backoff.cpp"
   "${DSS_HTTP_DIR}/common.hpp"
   "${DSS_HTTP_DIR}/common.cpp"
   "${DSS_HTTP_DIR}/headers.hpp"
