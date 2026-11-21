@@ -348,3 +348,62 @@ TEST(http_integration_test, binary_body_with_nulls)
   EXPECT_EQ(got.size(), payload.size());
   EXPECT_TRUE(std::equal(got.begin(), got.end(), payload.begin()));
 }
+
+TEST(http_integration_test, client_handler_exception_not_masked_as_parse_error)
+{
+  server_fixture srv(next_port());
+  srv.get().route(
+      http::method::GET, "/ok", [](const auto &) { return http::response::text(http::status_code::OK, "ok"); });
+  srv.start();
+
+  asio::io_context ctx;
+  http::client cli(ctx, "127.0.0.1", srv.port());
+
+  bool callback_invoked = false;
+  cli.get("/ok", {}, [&](boost::system::error_code /*ec*/, const auto &) {
+    callback_invoked = true;
+    throw std::runtime_error("user handler boom");
+  });
+
+  // With a wide try, the exception would be swallowed and turned into
+  // on_error(invalid_argument) — ctx.run() would return normally.
+  // With a narrow try, the exception propagates to ctx.run().
+  EXPECT_THROW(ctx.run(), std::runtime_error);
+  EXPECT_TRUE(callback_invoked);
+}
+
+TEST(http_integration_test, empty_200_response_is_interop_safe)
+{
+  server_fixture srv(next_port());
+  srv.get().route(
+      http::method::GET, "/empty", [](const auto &) { return http::response::simple(http::status_code::OK); });
+  srv.start();
+
+  // Raw HTTP check: response must contain "Content-Length: 0".
+  auto resp = raw_http_request(srv.port(), "GET /empty HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n");
+  EXPECT_NE(resp.find("content-length: 0\r\n"), std::string::npos) << resp;
+}
+
+TEST(http_integration_test, client_sends_content_length_zero_for_empty_post)
+{
+  // Server checks that the incoming request has Content-Length: 0.
+  server_fixture srv(next_port());
+  srv.get().route(http::method::POST, "/probe", [](const http::request &req) {
+    auto it = req.headers.find("Content-Length");
+    std::string cl = (it != req.headers.end()) ? it->second : "<missing>";
+    return http::response::text(http::status_code::OK, cl);
+  });
+  srv.start();
+
+  asio::io_context ctx;
+  http::client cli(ctx, "127.0.0.1", srv.port());
+
+  std::string got;
+  cli.post("/probe", {}, "", [&](auto ec, const auto &r) {
+    ASSERT_FALSE(ec) << ec.message();
+    got = r.body;
+  });
+  ctx.run();
+
+  EXPECT_EQ(got, "0");
+}
