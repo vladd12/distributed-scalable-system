@@ -3,7 +3,6 @@
 #include <core/conversion.hpp>
 #include <core/errors.hpp>
 #include <sstream>
-#include <utils/strings.hpp>
 
 namespace http
 {
@@ -39,7 +38,7 @@ std::string response::serialize() const
     oss << key << ": " << value << "\r\n";
 
   if (!headers.contains("Connection"))
-    oss << utils::to_lower("Connection: ") << "close\r\n";
+    oss << "connection: close\r\n";
 
   if (!headers.contains("Content-Length"))
   {
@@ -48,7 +47,7 @@ std::string response::serialize() const
     // Content-Length (possibly 0) so the peer knows the body size without
     // relying on connection close — otherwise keep-alive hangs.
     if (line.status_code != status_code::NO_CONTENT && line.status_code != status_code::NOT_MODIFIED)
-      oss << utils::to_lower("Content-Length: ") << body.size() << "\r\n";
+      oss << "content-length: " << body.size() << "\r\n";
   }
 
   oss << "\r\n";

@@ -2,7 +2,6 @@
 
 #include <core/errors.hpp>
 #include <sstream>
-#include <utils/strings.hpp>
 
 namespace http
 {
@@ -41,7 +40,7 @@ std::string request::serialize() const
     req << key << ": " << value << "\r\n";
 
   if (!headers.contains("Connection"))
-    req << utils::to_lower("Connection: ") << "close\r\n";
+    req << "connection: close\r\n";
 
   if (!headers.contains("Content-Length"))
   {
@@ -50,7 +49,7 @@ std::string request::serialize() const
     const bool is_method_anticipates_body
         = (line.method_type == method::POST || line.method_type == method::PUT || line.method_type == method::PATCH);
     if (is_method_anticipates_body || !body.empty())
-      req << utils::to_lower("Content-Length: ") << body.size() << "\r\n";
+      req << "content-length: " << body.size() << "\r\n";
   }
 
   req << "\r\n";
