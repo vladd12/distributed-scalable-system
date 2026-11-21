@@ -133,8 +133,8 @@ private:
 
     if (ec == asio::error::not_found)
     {
-      // TODO: log error
-      // derived().on_error(core::http_error("HTTP headers exceed configured buffer size"));
+      // No CRLF CRLF within the buffer capacity (streambuf full).
+      // TODO: log error "HTTP headers exceed configured buffer size"
       derived().on_error(asio::error::message_size);
       return;
     }
@@ -153,55 +153,55 @@ private:
     // Sanity check; async_read_until should have guaranteed the delimiter.
     if (delim == end)
     {
-      // TODO: log error
-      // derived().on_error(core::http_error("HTTP message has no CRLF CRLF delimiter"));
+      // TODO: log error "HTTP message has no CRLF CRLF delimiter"
       derived().on_error(asio::error::invalid_argument);
       return;
     }
     const std::size_t header_size = static_cast<std::size_t>(std::distance(begin, delim)) + 4;
     if (header_size > m_cfg.max_header_size)
     {
-      // TODO: log error
-      // derived().on_error(core::http_error("HTTP headers exceed max_header_size"));
+      // TODO: log error "HTTP headers exceed max_header_size"
       derived().on_error(asio::error::message_size);
       return;
     }
 
+    // Narrow try: parse errors → invalid_argument. User handler exceptions
+    // must NOT be masked as parse errors — they propagate to io_context::run().
+    read_t msg;
+    std::size_t expected = 0;
     try
     {
       std::istream stream(&m_buffer);
-      read_t msg = read_t::parse(stream);
-      m_buffer.consume(m_buffer.size()); // no-op after parse; kept for symmetry with the read path
-
-      const std::size_t expected = msg.headers.content_length();
-      if (expected > m_cfg.max_body_size)
-      {
-        // TODO: log error
-        // derived().on_error(core::http_error("HTTP body exceeds max_body_size"));
-        derived().on_error(asio::error::message_size);
-        return;
-      }
-      // Body already longer than declared Content-Length (pipelining or a malicious peer) - refuse the message.
-      if (msg.body.size() > expected)
-      {
-        // TODO: log error
-        // derived().on_error(core::http_error("HTTP body exceeds Content-Length (pipelining?)"));
-        derived().on_error(asio::error::invalid_argument);
-        return;
-      }
-
-      const std::size_t remaining = expected - msg.body.size();
-      if (remaining > 0)
-        do_remaining_read(remaining, std::move(msg));
-      else
-        derived().on_message_parsed(std::move(msg));
+      msg = read_t::parse(stream);
+      m_buffer.consume(m_buffer.size());
+      expected = msg.headers.content_length();
     } catch (const std::exception &ex)
     {
-      // Malformed HTTP (bad status line, bad request line, etc.).
-      // TODO: log error
-      // derived().on_error(core::http_error(ex.what()));
+      // Malformed HTTP (bad status/request line, invalid Content-Length).
+      // TODO: log ex.what()
       derived().on_error(asio::error::invalid_argument);
+      return;
     }
+
+    if (expected > m_cfg.max_body_size)
+    {
+      // TODO: log error "HTTP body exceeds max_body_size"
+      derived().on_error(asio::error::message_size);
+      return;
+    }
+    if (msg.body.size() > expected)
+    {
+      // Pipelining or malicious peer: body already exceeds declared length.
+      // TODO: log error "HTTP body exceeds Content-Length (pipelining?)"
+      derived().on_error(asio::error::invalid_argument);
+      return;
+    }
+
+    const std::size_t remaining = expected - msg.body.size();
+    if (remaining > 0)
+      do_remaining_read(remaining, std::move(msg));
+    else
+      derived().on_message_parsed(std::move(msg)); // <-- outside try
   }
 
   /// @brief Reads exactly `remaining` more body bytes into the buffer.
