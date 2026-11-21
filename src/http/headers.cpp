@@ -3,8 +3,33 @@
 #include <core/errors.hpp>
 #include <utils/strings.hpp>
 //
+#include <array>
 #include <charconv>
 #include <istream>
+
+namespace
+{
+/// @brief   Headers that must appear at most once per HTTP message.
+/// @details Duplicates of these are rejected: `Content-Length` duplication is
+///          a request-smuggling vector (RFC 7230 §3.3.2), `Host` duplication is
+///          an invalid HTTP/1.1 request (RFC 7230 §5.4). Keys are expected in
+///          normalized (lowercase) form.
+constexpr inline std::array<std::string_view, 2> forbidden_duplicate_headers {
+  "content-length",
+  "host",
+};
+
+[[nodiscard]] inline bool is_duplicate_forbidden(std::string_view normalized_key) noexcept
+{
+  for (auto key : forbidden_duplicate_headers)
+  {
+    if (normalized_key == key)
+      return true;
+  }
+  return false;
+}
+
+} // anonymous namespace
 
 namespace http
 {
@@ -53,11 +78,12 @@ headers_t headers_t::parse(std::istream &stream)
     if (colon == 0 || colon == std::string::npos)
       throw core::http_error("headers parsing error: invalid header passed");
 
-    std::string key = line.substr(0, colon);
-    std::string value = line.substr(colon + 1);
+    std::string key = utils::normalize(line.substr(0, colon));
+    std::string value = utils::trim(line.substr(colon + 1));
+    if (is_duplicate_forbidden(key) && headers.storage.contains(key))
+      throw core::http_error("headers parsing error: duplicate '" + key + "' header");
 
-    // Trim leading whitespace from value
-    headers[std::move(key)] = std::move(utils::trim(std::move(value)));
+    headers.storage.insert({ std::move(key), utils::trim(value) });
   }
 
   return headers;
