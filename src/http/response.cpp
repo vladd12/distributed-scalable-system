@@ -40,8 +40,15 @@ std::string response::serialize() const
   if (!headers.contains("Connection"))
     oss << "Connection: close\r\n";
 
-  if (!headers.contains("Content-Length") && !body.empty())
-    oss << "Content-Length: " << body.size() << "\r\n";
+  if (!headers.contains("Content-Length"))
+  {
+    // RFC 7230 §3.3.2: 204 must not carry Content-Length. 304 MAY omit it
+    // (we do — body is never present). For every other status, send an explicit
+    // Content-Length (possibly 0) so the peer knows the body size without
+    // relying on connection close — otherwise keep-alive hangs.
+    if (line.status_code != status_code::NO_CONTENT && line.status_code != status_code::NOT_MODIFIED)
+      oss << "Content-Length: " << body.size() << "\r\n";
+  }
 
   oss << "\r\n";
   if (!body.empty())
