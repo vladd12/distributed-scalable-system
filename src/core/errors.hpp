@@ -5,7 +5,7 @@
 namespace core
 {
 
-/// \brief Class for not implemented features.
+/// @brief Class for not implemented features.
 class not_implemented_error final : public std::runtime_error
 {
 public:
@@ -18,7 +18,7 @@ public:
   }
 };
 
-/// \brief Class for IO errors.
+/// @brief Class for IO errors.
 class io_error : public std::runtime_error
 {
 public:
@@ -31,7 +31,7 @@ public:
   }
 };
 
-/// \brief Class for checksum errors.
+/// @brief Class for checksum errors.
 class checksum_error final : public io_error
 {
 public:
@@ -44,7 +44,7 @@ public:
   }
 };
 
-/// \brief Class for file system errors (file not found).
+/// @brief Class for file system errors (file not found).
 class file_not_found final : public io_error
 {
 public:
@@ -57,7 +57,7 @@ public:
   }
 };
 
-/// \brief Class for HTTP errors (connection errors, etc...).
+/// @brief Class for HTTP errors (connection errors, etc...).
 class http_error final : public std::runtime_error
 {
 public:
