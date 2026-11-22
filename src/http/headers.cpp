@@ -6,6 +6,7 @@
 #include <array>
 #include <charconv>
 #include <istream>
+#include <string_view>
 
 namespace
 {
@@ -21,7 +22,7 @@ constexpr inline std::array<std::string_view, 2> forbidden_duplicate_headers {
 
 [[nodiscard]] inline bool is_duplicate_forbidden(std::string_view normalized_key) noexcept
 {
-  for (auto key : forbidden_duplicate_headers)
+  for (const auto &key : forbidden_duplicate_headers)
   {
     if (normalized_key == key)
       return true;
@@ -37,7 +38,13 @@ namespace http
 headers_t::headers_t(std::initializer_list<value_type> init_list)
 {
   for (auto &&[key, value] : init_list)
-    storage.insert({ utils::normalize(key), utils::trim(value) });
+  {
+    std::string normalized_key = utils::normalize(key);
+    std::string normalized_value = utils::trim(value);
+    if (is_duplicate_forbidden(normalized_key) && storage.contains(normalized_key))
+      throw core::http_error("headers: duplicate '" + normalized_key + "' header in initializer_list");
+    storage.insert({ std::move(normalized_key), std::move(normalized_value) });
+  }
 }
 
 std::string &headers_t::operator[](const std::string &key)
@@ -83,7 +90,7 @@ headers_t headers_t::parse(std::istream &stream)
     if (is_duplicate_forbidden(key) && headers.storage.contains(key))
       throw core::http_error("headers parsing error: duplicate '" + key + "' header");
 
-    headers.storage.insert({ std::move(key), utils::trim(value) });
+    headers.storage.insert({ std::move(key), std::move(value) });
   }
 
   return headers;
