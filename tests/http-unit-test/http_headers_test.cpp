@@ -1,3 +1,4 @@
+#include <core/errors.hpp>
 #include <gtest/gtest.h>
 #include <http/headers.hpp>
 #include <sstream>
@@ -74,4 +75,81 @@ TEST(http_headers_test, iterator_reaches_end)
   for (auto it = h.begin(); it != h.end(); ++it)
     ++count;
   ASSERT_EQ(count, 2);
+}
+
+// ============================================================================
+// Duplicate security-sensitive headers
+// ============================================================================
+
+TEST(http_headers_test, duplicate_content_length_same_value_throws)
+{
+  std::istringstream s("Content-Length: 5\r\nContent-Length: 5\r\n\r\n");
+  EXPECT_THROW((void)http::headers_t::parse(s), core::http_error);
+}
+
+TEST(http_headers_test, duplicate_content_length_different_values_throws)
+{
+  std::istringstream s("Content-Length: 5\r\nContent-Length: 10\r\n\r\n");
+  EXPECT_THROW((void)http::headers_t::parse(s), core::http_error);
+}
+
+TEST(http_headers_test, duplicate_content_length_case_insensitive)
+{
+  // Different casing — still duplicate after normalization.
+  std::istringstream s("Content-Length: 5\r\ncontent-length: 5\r\n\r\n");
+  EXPECT_THROW((void)http::headers_t::parse(s), core::http_error);
+}
+
+TEST(http_headers_test, duplicate_host_throws)
+{
+  std::istringstream s("Host: a.example\r\nHost: b.example\r\n\r\n");
+  EXPECT_THROW((void)http::headers_t::parse(s), core::http_error);
+}
+
+TEST(http_headers_test, duplicate_host_case_insensitive)
+{
+  std::istringstream s("Host: a.example\r\nhost: a.example\r\n\r\n");
+  EXPECT_THROW((void)http::headers_t::parse(s), core::http_error);
+}
+
+TEST(http_headers_test, single_content_length_and_host_ok)
+{
+  std::istringstream s("Host: localhost\r\nContent-Length: 0\r\n\r\n");
+  const auto h = http::headers_t::parse(s);
+  ASSERT_EQ(h.size(), 2u);
+  ASSERT_TRUE(h.contains("host"));
+  ASSERT_TRUE(h.contains("content-length"));
+}
+
+// ============================================================================
+// Duplicate non-sensitive headers: allowed, first-wins
+// ============================================================================
+
+TEST(http_headers_test, duplicate_non_sensitive_header_first_wins)
+{
+  std::istringstream s("X-Foo: a\r\nX-Foo: b\r\n\r\n");
+  const auto h = http::headers_t::parse(s);
+  ASSERT_EQ(h.size(), 1u);
+  ASSERT_EQ(h.find("x-foo")->second, "a"); // first-wins
+}
+
+// ============================================================================
+// Initializer-list path — same semantics
+// ============================================================================
+
+TEST(http_headers_test, initializer_list_duplicate_content_length_throws)
+{
+  EXPECT_THROW((http::headers_t { { "Content-Length", "5" }, { "Content-Length", "10" } }), core::http_error);
+}
+
+TEST(http_headers_test, initializer_list_duplicate_host_throws)
+{
+  EXPECT_THROW((http::headers_t { { "Host", "a" }, { "host", "b" } }), core::http_error);
+}
+
+TEST(http_headers_test, initializer_list_duplicate_non_sensitive_allowed)
+{
+  http::headers_t h { { "X-Foo", "a" }, { "X-Foo", "b" } };
+  ASSERT_EQ(h.size(), 1u);
+  ASSERT_EQ(h.find("x-foo")->second, "a"); // first-wins
 }
