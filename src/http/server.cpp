@@ -87,13 +87,19 @@ public:
     shutdown();
   }
 
-  /// @brief Hook: a protocol-level violation was detected by the base state machine
-  ///        (oversized request headers or body). Reply with the corresponding HTTP
-  ///        error response (431 / 413) and force the connection to close after write.
+  /// @brief   Hook: protocol-level violation detected by the base state machine
+  ///          (malformed request, oversized headers/body, invalid framing).
+  /// @details Sends the corresponding generic HTTP error response (status reason
+  ///          phrase, no diagnostic details — those would leak parser internals
+  ///          to the peer) and forces connection close. @p what is a diagnostic
+  ///          message intended for logging only.
   void on_protocol_error(status_code code, std::string_view what)
   {
-    m_keep_alive = false; // force shutdown in on_write_complete
-    auto resp = response::text(code, std::string(what));
+    // TODO: log at warn/error level with `what` and peer endpoint.
+    (void)what;
+
+    m_keep_alive = false;
+    auto resp = response::text(code, std::string(status_text_for(code)));
     resp.headers["Connection"] = "close";
     do_write(resp);
   }

@@ -170,8 +170,8 @@ private:
       return;
     }
 
-    // Narrow try: parse errors → invalid_argument. User handler exceptions
-    // must NOT be masked as parse errors — they propagate to io_context::run().
+    // Narrow try: parse errors -> BAD_REQUEST. Internal defensiveness (delim not
+    // found) -> on_error; user handler exceptions propagate to io_context::run().
     read_t msg;
     std::size_t expected = 0;
     try
@@ -182,9 +182,11 @@ private:
       expected = msg.headers.content_length();
     } catch (const std::exception &ex)
     {
-      // Malformed HTTP (bad status/request line, invalid Content-Length).
-      // TODO: log ex.what()
-      derived().on_error(asio::error::invalid_argument);
+      // Malformed HTTP: bad request line, invalid header, duplicate Content-Length,
+      // invalid Content-Length. `ex.what()` is diagnostic only — never sent to the
+      // peer (info leak).
+      // TODO: log ex.what().
+      derived().on_protocol_error(status_code::BAD_REQUEST, ex.what());
       return;
     }
 
@@ -194,11 +196,12 @@ private:
       derived().on_protocol_error(status_code::LARGE_PAYLOAD, "HTTP body exceed max_body_size");
       return;
     }
+
     if (msg.body.size() > expected)
     {
-      // Pipelining or malicious peer: body already exceeds declared length.
-      // TODO: log error "HTTP body exceeds Content-Length (pipelining?)"
-      derived().on_error(asio::error::invalid_argument);
+      // Pipelining or a malicious peer: body already exceeds declared length.
+      // TODO: log error
+      derived().on_protocol_error(status_code::BAD_REQUEST, "invalid message framing");
       return;
     }
 
