@@ -86,6 +86,17 @@ public:
   {
     shutdown();
   }
+
+  /// @brief Hook: a protocol-level violation was detected by the base state machine
+  ///        (oversized request headers or body). Reply with the corresponding HTTP
+  ///        error response (431 / 413) and force the connection to close after write.
+  void on_protocol_error(status_code code, std::string_view what)
+  {
+    m_keep_alive = false; // force shutdown in on_write_complete
+    auto resp = response::text(code, std::string(what));
+    resp.headers["Connection"] = "close";
+    do_write(resp);
+  }
 };
 
 // ---------------------------------------------------------------------------

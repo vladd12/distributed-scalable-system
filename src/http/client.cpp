@@ -158,6 +158,14 @@ public:
     if (cb)
       cb(ec, {});
   }
+
+  /// @brief Hook: a protocol-level violation was detected by the base state machine
+  ///        (oversized response headers or body). Client cannot send an HTTP error
+  ///        response back; surface the failure to the caller and close.
+  void on_protocol_error(status_code /*code*/, std::string_view /*what*/)
+  {
+    on_error(asio::error::invalid_argument);
+  }
 };
 
 // ---------------------------------------------------------------------------

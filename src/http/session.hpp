@@ -28,6 +28,10 @@ using tcp = asio::ip::tcp;
 ///   - void on_message_parsed(read_t msg);           // called on fully-read message
 ///   - void on_write_complete();                     // called after successful write
 ///   - void on_error(boost::system::error_code ec);  // called on any failure
+///   - void on_protocol_error(status_code code, std::string_view what);
+///       // called on protocol violation (oversized headers/body). Server
+///       // should send the corresponding HTTP error response and close;
+///       // client should just report the error to the caller.
 template <typename Derived, typename R, typename W> //
 class session : public std::enable_shared_from_this<Derived>
 {
@@ -133,13 +137,14 @@ private:
 
     if (ec == asio::error::not_found)
     {
-      // No CRLF CRLF within the buffer capacity (streambuf full).
-      // TODO: log error "HTTP headers exceed configured buffer size"
-      derived().on_error(asio::error::message_size);
+      // Streambuf filled up before CRLF CRLF: headers exceed configured capacity.
+      // TODO: log error
+      derived().on_protocol_error(status_code::LARGE_HEADERS, "HTTP headers exceed configured buffer capacity");
       return;
     }
     if (ec)
     {
+      // TODO: log error
       derived().on_error(ec);
       return;
     }
@@ -160,8 +165,8 @@ private:
     const std::size_t header_size = static_cast<std::size_t>(std::distance(begin, delim)) + 4;
     if (header_size > m_cfg.max_header_size)
     {
-      // TODO: log error "HTTP headers exceed max_header_size"
-      derived().on_error(asio::error::message_size);
+      // TODO: log error
+      derived().on_protocol_error(status_code::LARGE_HEADERS, "HTTP headers exceed max_header_size");
       return;
     }
 
@@ -185,8 +190,8 @@ private:
 
     if (expected > m_cfg.max_body_size)
     {
-      // TODO: log error "HTTP body exceeds max_body_size"
-      derived().on_error(asio::error::message_size);
+      // TODO: log error
+      derived().on_protocol_error(status_code::LARGE_PAYLOAD, "HTTP body exceed max_body_size");
       return;
     }
     if (msg.body.size() > expected)
