@@ -123,3 +123,27 @@ TEST(http_client_test, reports_error_when_server_sends_oversized_headers)
 
   EXPECT_EQ(got, asio::error::invalid_argument);
 }
+
+// ============================================================================
+// Client-side: malformed response -> invalid_argument (not 400)
+// ============================================================================
+
+TEST(http_client_test, malformed_response_reports_invalid_argument)
+{
+  const auto port = next_port();
+  // Status line "HTTP/1.1 abc OK" — "abc" is not a numeric status code.
+  raw_server srv(port,
+      "HTTP/1.1 abc OK\r\n"
+      "Content-Length: 0\r\n"
+      "Connection: close\r\n"
+      "\r\n");
+
+  asio::io_context ctx;
+  http::client cli(ctx, "127.0.0.1", port);
+
+  boost::system::error_code got;
+  cli.get("/", {}, [&](boost::system::error_code ec, const auto &) { got = ec; });
+  ctx.run();
+
+  EXPECT_EQ(got, asio::error::invalid_argument);
+}

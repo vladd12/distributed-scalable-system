@@ -114,3 +114,86 @@ TEST(http_server_test, oversized_headers_response_has_content_length)
   // The 431 body is the diagnostic string; it must have Content-Length.
   EXPECT_NE(resp.find("content-length:"), std::string::npos) << resp;
 }
+
+// ============================================================================
+// Malformed request -> 400 Bad Request
+// ============================================================================
+
+TEST(http_server_test, malformed_request_line_returns_400)
+{
+  server_fixture srv(next_port());
+  srv.start();
+
+  auto resp = raw_http_request(srv.port(), "GARBAGE\r\nHost: localhost\r\nConnection: close\r\n\r\n");
+  EXPECT_NE(resp.find("400 Bad Request"), std::string::npos) << resp;
+  EXPECT_NE(resp.find("connection: close"), std::string::npos) << resp;
+}
+
+TEST(http_server_test, header_without_colon_returns_400)
+{
+  server_fixture srv(next_port());
+  srv.start();
+
+  auto resp
+      = raw_http_request(srv.port(), "GET / HTTP/1.1\r\nHost: localhost\r\nBrokenHeader\r\nConnection: close\r\n\r\n");
+  EXPECT_NE(resp.find("400 Bad Request"), std::string::npos) << resp;
+}
+
+TEST(http_server_test, duplicate_content_length_returns_400)
+{
+  server_fixture srv(next_port());
+  srv.start();
+
+  auto resp = raw_http_request(srv.port(),
+      "POST / HTTP/1.1\r\n"
+      "Host: localhost\r\n"
+      "Content-Length: 5\r\n"
+      "Content-Length: 10\r\n"
+      "Connection: close\r\n"
+      "\r\n");
+  EXPECT_NE(resp.find("400 Bad Request"), std::string::npos) << resp;
+}
+
+TEST(http_server_test, invalid_content_length_value_returns_400)
+{
+  server_fixture srv(next_port());
+  srv.start();
+
+  auto resp = raw_http_request(srv.port(),
+      "POST / HTTP/1.1\r\n"
+      "Host: localhost\r\n"
+      "Content-Length: abc\r\n"
+      "Connection: close\r\n"
+      "\r\n");
+  EXPECT_NE(resp.find("400 Bad Request"), std::string::npos) << resp;
+}
+
+TEST(http_server_test, invalid_content_length_trailing_garbage_returns_400)
+{
+  server_fixture srv(next_port());
+  srv.start();
+
+  auto resp = raw_http_request(srv.port(),
+      "POST / HTTP/1.1\r\n"
+      "Host: localhost\r\n"
+      "Content-Length: 5x\r\n"
+      "Connection: close\r\n"
+      "\r\n");
+  EXPECT_NE(resp.find("400 Bad Request"), std::string::npos) << resp;
+}
+
+// ============================================================================
+// 400 body must NOT leak parser internals
+// ============================================================================
+
+TEST(http_server_test, bad_request_body_is_generic)
+{
+  server_fixture srv(next_port());
+  srv.start();
+
+  auto resp = raw_http_request(srv.port(), "GARBAGE\r\nHost: localhost\r\nConnection: close\r\n\r\n");
+
+  // Parser message like "request line parsing error: ..." must NOT appear in body.
+  EXPECT_EQ(resp.find("parsing error"), std::string::npos) << resp;
+  EXPECT_EQ(resp.find("invalid 'Content-Length'"), std::string::npos) << resp;
+}
