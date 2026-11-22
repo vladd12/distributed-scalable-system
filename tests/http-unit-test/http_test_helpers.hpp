@@ -144,9 +144,9 @@ class server_fixture
   std::uint16_t m_port;
 
 public:
-  inline explicit server_fixture(std::uint16_t port) : m_port(port)
+  inline explicit server_fixture(std::uint16_t port, http::http_configuration cfg = {}) : m_port(port)
   {
-    m_server = std::make_unique<::http::server>(m_ctx, port);
+    m_server = std::make_unique<::http::server>(m_ctx, port, std::move(cfg));
   }
 
   inline ~server_fixture()

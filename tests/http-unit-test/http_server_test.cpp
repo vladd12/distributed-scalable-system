@@ -77,8 +77,6 @@ TEST(http_server_test, rejects_oversized_content_length)
       [](const auto &req) { return http::response::text(http::status_code::OK, req.body); });
   srv.start();
 
-  // Content-Length > max_body_size (default 1 MiB).
-  // NOTE: current server behavior is "close without response", not 413.
   auto resp = raw_http_request(srv.port(),
       "POST /data HTTP/1.1\r\n"
       "Host: localhost\r\n"
@@ -86,6 +84,33 @@ TEST(http_server_test, rejects_oversized_content_length)
       "Connection: close\r\n"
       "\r\n");
 
-  // Server should not produce a 200; current impl just closes.
-  EXPECT_EQ(resp.find("200 OK"), std::string::npos) << resp;
+  EXPECT_NE(resp.find("413 Payload Too Large"), std::string::npos) << resp;
+  EXPECT_NE(resp.find("connection: close"), std::string::npos) << resp;
+}
+
+TEST(http_server_test, rejects_oversized_headers)
+{
+  server_fixture srv(next_port());
+  srv.start();
+
+  // Single header value pushes total header size past max_header_size (16 KiB default).
+  std::string request
+      = "GET / HTTP/1.1\r\nHost: localhost\r\nX-Fill: " + std::string(20000, 'a') + "\r\nConnection: close\r\n\r\n";
+
+  auto resp = raw_http_request(srv.port(), request);
+  EXPECT_NE(resp.find("431 Request Header Fields Too Large"), std::string::npos) << resp;
+  EXPECT_NE(resp.find("connection: close"), std::string::npos) << resp;
+}
+
+TEST(http_server_test, oversized_headers_response_has_content_length)
+{
+  server_fixture srv(next_port());
+  srv.start();
+
+  std::string request
+      = "GET / HTTP/1.1\r\nHost: localhost\r\nX-Fill: " + std::string(20000, 'a') + "\r\nConnection: close\r\n\r\n";
+
+  auto resp = raw_http_request(srv.port(), request);
+  // The 431 body is the diagnostic string; it must have Content-Length.
+  EXPECT_NE(resp.find("content-length:"), std::string::npos) << resp;
 }

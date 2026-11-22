@@ -102,3 +102,24 @@ TEST(http_client_test, times_out_when_server_silent)
 
   EXPECT_EQ(got, asio::error::timed_out);
 }
+
+TEST(http_client_test, reports_error_when_server_sends_oversized_headers)
+{
+  // raw_server sends headers > default max_header_size (16 KiB) with valid terminator.
+  std::string big_response = "HTTP/1.1 200 OK\r\n";
+  big_response += "X-Fill: " + std::string(20000, 'a') + "\r\n";
+  big_response += "Content-Length: 0\r\n";
+  big_response += "Connection: close\r\n\r\n";
+
+  const auto port = next_port();
+  raw_server srv(port, big_response);
+
+  asio::io_context ctx;
+  http::client cli(ctx, "127.0.0.1", port);
+
+  boost::system::error_code got;
+  cli.get("/", {}, [&](boost::system::error_code ec, const auto &) { got = ec; });
+  ctx.run();
+
+  EXPECT_EQ(got, asio::error::invalid_argument);
+}
