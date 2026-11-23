@@ -7,6 +7,8 @@ set(HTTP_UNIT_TEST_SRC
   "${CMAKE_CURRENT_SOURCE_DIR}/http_integration_test.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/http_backoff_test.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/http_serialize_test.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/http_server_shutdown_test.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/http_client_shutdown_test.cpp"
 )
 
 add_executable(http-unit-test ${HTTP_UNIT_TEST_SRC})
