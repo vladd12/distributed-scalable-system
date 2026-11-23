@@ -171,7 +171,7 @@ public:
   /// @details Any registered response callback is invoked exactly once with
   ///          `asio::error::operation_aborted` before the socket is closed, so
   ///          the caller is not left waiting for a response that will never arrive.
-  ///          Idempotent — safe to call multiple times.
+  ///          Idempotent - safe to call multiple times.
   void close()
   {
     auto cb = std::move(m_callback);

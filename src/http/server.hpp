@@ -18,7 +18,7 @@ using tcp = asio::ip::tcp;
 /// @brief   Synchronous request handler.
 /// @details Invoked on the io_context thread. If it throws, the session turns
 ///          the exception into a 500 response and closes the connection.
-///          Should not block the thread — long work must be offloaded elsewhere.
+///          Should not block the thread - long work must be offloaded elsewhere.
 using request_handler = std::function<response(const request &)>;
 
 /// @brief   Minimalistic HTTP/1.1 server built on boost::asio.
@@ -29,7 +29,7 @@ class server final
 {
 public:
   /// @brief  Constructs the server and begins accepting connections.
-  /// @param  ctx  The io_context that drives async operations.
+  /// @param  ctx   The io_context that drives async operations.
   /// @param  port  The TCP port to listen on (all interfaces, 0.0.0.0).
   /// @throws boost::system::system_error if the port cannot be bound (e.g. busy).
   explicit server(asio::io_context &ctx, const std::uint16_t port, http_configuration cfg = {});
@@ -81,9 +81,6 @@ private:
   ///          (shared_from_this in session::do_read).
   void do_accept();
 
-  bool is_fatal_accept_error(const boost::system::error_code &ec) const noexcept;
-  bool is_resource_exhaustion(const boost::system::error_code &ec) const noexcept;
-
   /// @brief   Routes a parsed request to the matching handler.
   /// @param   req Parsed request; lookup key is (req.line.method_type, req.line.path).
   /// @return  Response produced by the matched handler or by the default handler.
@@ -91,7 +88,7 @@ private:
   ///          matches, delegates to `m_default_handler` (404 Not Found by default).
   ///          Matching is exact: no prefix matching, no path normalization,
   ///          query string is part of the key. See route_key for details.
-  ///          Does not catch exceptions thrown by handlers — those are turned
+  ///          Does not catch exceptions thrown by handlers - those are turned
   ///          into a 500 response upstream, in server_session::on_message_parsed.
   [[nodiscard]] response dispatch(const request &req);
 

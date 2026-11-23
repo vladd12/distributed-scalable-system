@@ -4,6 +4,36 @@
 #include <http/session.hpp>
 #include <utils/strings.hpp>
 
+namespace
+{
+/// @brief   Returns true if an `async_accept` error means the acceptor itself
+///          is broken and retrying is pointless.
+/// @details `bad_descriptor` - acceptor is closed/invalid;
+///          `access_denied` - missing privileges (port < 1024 without root);
+///          other codes signal unsupported address family, unsupported operation,
+///          or an internal fault. For these the server should stop accepting rather than spin.
+bool is_fatal_accept_error(const boost::system::error_code &ec) noexcept
+{
+  // clang-format off
+  return ec == boost::asio::error::bad_descriptor               ||
+         ec == boost::asio::error::access_denied                ||
+         ec == boost::asio::error::address_family_not_supported ||
+         ec == boost::asio::error::operation_not_supported      ||
+         ec == boost::asio::error::fault;
+  // clang-format on
+}
+
+/// @brief   Returns true if an `async_accept` error is caused by exhausted
+///          process resources and a delayed retry may succeed.
+/// @details Currently only `no_descriptors` (EMFILE) - the process hit its
+///          open-files limit. The accept loop backs off and retries; the
+///          situation usually resolves once other sessions are closed.
+bool is_resource_exhaustion(const boost::system::error_code &ec) noexcept
+{
+  return ec == boost::asio::error::no_descriptors; // EMFILE
+}
+}
+
 namespace http
 {
 
@@ -98,7 +128,7 @@ public:
   /// @brief   Hook: protocol-level violation detected by the base state machine
   ///          (malformed request, oversized headers/body, invalid framing).
   /// @details Sends the corresponding generic HTTP error response (status reason
-  ///          phrase, no diagnostic details — those would leak parser internals
+  ///          phrase, no diagnostic details - those would leak parser internals
   ///          to the peer) and forces connection close. @p what is a diagnostic
   ///          message intended for logging only.
   void on_protocol_error(status_code code, std::string_view what)
@@ -239,7 +269,7 @@ void server::do_accept()
           do_accept();
         });
       }
-      // Skip transient errors (connection_aborted, connection_reset, ...) — retry.
+      // Skip transient errors (connection_aborted, connection_reset, ...) - retry.
       do_accept();
     }
     else
@@ -259,22 +289,6 @@ void server::do_accept()
       do_accept();
     }
   });
-}
-
-bool server::is_fatal_accept_error(const boost::system::error_code &ec) const noexcept
-{
-  // clang-format off
-  return ec == asio::error::bad_descriptor               ||
-         ec == asio::error::access_denied                ||
-         ec == asio::error::address_family_not_supported ||
-         ec == asio::error::operation_not_supported      ||
-         ec == asio::error::fault;
-  // clang-format on
-}
-
-bool server::is_resource_exhaustion(const boost::system::error_code &ec) const noexcept
-{
-  return ec == asio::error::no_descriptors; // EMFILE
 }
 
 response server::dispatch(const request &req)

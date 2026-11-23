@@ -193,7 +193,7 @@ private:
     } catch (const std::exception &ex)
     {
       // Malformed HTTP: bad request line, invalid header, duplicate Content-Length,
-      // invalid Content-Length. `ex.what()` is diagnostic only — never sent to the
+      // invalid Content-Length. `ex.what()` is diagnostic only - never sent to the
       // peer (info leak).
       // TODO: log ex.what().
       derived().on_protocol_error(status_code::BAD_REQUEST, ex.what());
@@ -257,7 +257,7 @@ private:
     m_timer.expires_after(m_cfg.io_timeout);
     auto self = derived().shared_from_this();
     m_timer.async_wait([this, self](boost::system::error_code ec) {
-      // normal cancellation — the async op completed successfully
+      // normal cancellation - the async op completed successfully
       if (ec == asio::error::operation_aborted)
         return;
       shutdown();
