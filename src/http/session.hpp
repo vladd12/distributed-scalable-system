@@ -32,6 +32,7 @@ using tcp = asio::ip::tcp;
 ///       // called on protocol violation (oversized headers/body). Server
 ///       // should send the corresponding HTTP error response and close;
 ///       // client should just report the error to the caller.
+///   - void on_shutdown(); // called exactly once when the socket closes
 template <typename Derived, typename R, typename W> //
 class session : public std::enable_shared_from_this<Derived>
 {
@@ -41,11 +42,12 @@ public:
   using pointer = std::shared_ptr<Derived>;
 
 protected:
-  tcp::socket m_socket;       ///< Underlying TCP socket
-  asio::steady_timer m_timer; ///< Per-operation timeout timer
-  asio::streambuf m_buffer;   ///< Read buffer (header + body capacity)
-  http_configuration m_cfg;   ///< Session configuration
-  bool m_keep_alive = false;  ///< Whether peer agreed to keep-alive
+  tcp::socket m_socket;            ///< Underlying TCP socket
+  asio::steady_timer m_timer;      ///< Per-operation timeout timer
+  asio::streambuf m_buffer;        ///< Read buffer (header + body capacity)
+  http_configuration m_cfg;        ///< Session configuration
+  bool m_keep_alive = false;       ///< Whether peer agreed to keep-alive
+  bool m_shutdown_invoked = false; ///< Guards on_shutdown() to fire exactly once.
 
   /// @brief Initializes the session around an already-open (or about-to-open) socket.
   /// @param socket Connected/owned socket (moved in).
@@ -73,15 +75,23 @@ public:
   /// @brief   Cancels pending operations and closes the socket.
   /// @details Idempotent: safe to call multiple times. Clears the timer first
   ///          so a pending timeout cannot fire after the socket is closed.
+  ///          Invokes `derived().on_shutdown()` exactly once, on the first call
+  ///          that actually transitions to closed state.
   void shutdown()
   {
-    cancel_timer();
-    if (!m_socket.is_open())
+    if (m_shutdown_invoked)
       return;
-    boost::system::error_code ignored;
-    m_socket.cancel(ignored);
-    m_socket.shutdown(tcp::socket::shutdown_both, ignored);
-    m_socket.close(ignored);
+    m_shutdown_invoked = true;
+
+    cancel_timer();
+    if (m_socket.is_open())
+    {
+      boost::system::error_code ignored;
+      m_socket.cancel(ignored);
+      m_socket.shutdown(tcp::socket::shutdown_both, ignored);
+      m_socket.close(ignored);
+    }
+    derived().on_shutdown();
   }
 
   /// @brief Returns true if the underlying socket is still open.

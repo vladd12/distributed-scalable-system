@@ -65,6 +65,15 @@ public:
   ///          running the io_context; the handler is invoked once.
   void on_connected(on_connect_callback handler);
 
+  /// @brief   Closes the underlying connection.
+  /// @details Idempotent. A pending request (if any) is cancelled and its
+  ///          callback is invoked with `asio::error::operation_aborted`.
+  ///          After close(), the client cannot be reused.
+  void close();
+
+  /// @brief Returns true if the underlying socket is closed.
+  [[nodiscard]] bool is_closed() const;
+
   /// @brief Performs an asynchronous HTTP GET request.
   /// @param path    Request target (path + optional query).
   /// @param headers Extra headers (Host and Connection filled if absent).

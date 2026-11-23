@@ -166,6 +166,26 @@ public:
   {
     on_error(asio::error::invalid_argument);
   }
+
+  /// @brief   Cancels a pending request (if any) and closes the underlying socket.
+  /// @details Any registered response callback is invoked exactly once with
+  ///          `asio::error::operation_aborted` before the socket is closed, so
+  ///          the caller is not left waiting for a response that will never arrive.
+  ///          Idempotent — safe to call multiple times.
+  void close()
+  {
+    auto cb = std::move(m_callback);
+    m_callback = nullptr;
+    shutdown();
+    if (cb)
+      cb(asio::error::operation_aborted, {});
+  }
+
+  /// @brief Called exactly once by base shutdown().
+  void on_shutdown()
+  {
+    // No lifecycle tracking on the client side; nothing to do.
+  }
 };
 
 // ---------------------------------------------------------------------------
@@ -184,6 +204,16 @@ void client::on_connected(on_connect_callback handler)
 {
   if (m_session->get_connect_type() == connect_type::async)
     m_session->async_connect(std::move(handler));
+}
+
+void client::close()
+{
+  m_session->close();
+}
+
+bool client::is_closed() const
+{
+  return !m_session->is_open();
 }
 
 void client::get(const std::string &path, const headers_t &headers, response_callback handler)

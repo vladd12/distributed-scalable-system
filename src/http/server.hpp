@@ -7,6 +7,7 @@
 #include <boost/asio.hpp>
 //
 #include <functional>
+#include <unordered_set>
 
 namespace http
 {
@@ -48,7 +49,30 @@ public:
   /// @details Default (until overridden) responds 404 Not Found.
   void set_default_handler(request_handler handler);
 
+  /// @brief   Gracefully stops the server.
+  /// @details Stops accepting new connections (closes the acceptor) and
+  ///          cancels all active sessions (closes their sockets). Idempotent.
+  /// @note    The actual socket cleanup happens on the io_context thread:
+  ///          this method schedules the work via `asio::post` and returns
+  ///          immediately. The caller must continue running `io_context::run()`
+  ///          after `stop()` returns, until `active_sessions() == 0` AND no
+  ///          further handlers are pending; only then is it safe to destroy
+  ///          the io_context and the server object.
+  /// @note    The server object must outlive all its sessions. Destroying the
+  ///          server while a session is still alive results in dangling
+  ///          `this` in the session's shutdown callback.
+  void stop();
+
+  /// @brief Returns the number of currently active sessions.
+  [[nodiscard]] std::size_t active_sessions() const;
+
+  /// @brief Returns true if stop() has been called.
+  [[nodiscard]] bool is_stopped() const;
+
 private:
+  class server_session;
+  using session_ptr = std::shared_ptr<server_session>;
+
   /// @brief   Accepts the next incoming connection and starts a server_session for it.
   /// @details Asynchronous accept loop: on success, creates a server_session with
   ///          the dispatching handler (see dispatch()) and starts reading from it,
@@ -71,6 +95,16 @@ private:
   ///          into a 500 response upstream, in server_session::on_message_parsed.
   [[nodiscard]] response dispatch(const request &req);
 
+  /// @brief  Registers a session for lifecycle tracking.
+  /// @return true if the session was registered; false if the server is
+  ///         stopping (caller must discard the session).
+  bool track_session(const session_ptr &session);
+
+  /// @brief   Removes a session from the active set, called from the session's shutdown path.
+  /// @details Invoked exactly once per tracked session (via the base
+  ///          `session::shutdown()` hook). Erasing an already-removed session is a no-op.
+  void untrack_session(const session_ptr &session);
+
   /// @brief   Key for exact-match routing: (method, path).
   /// @details `path` is compared verbatim (no normalization — send "/Health" and
   ///          "/health" are different keys). Query string is part of the path.
@@ -87,12 +121,15 @@ private:
     std::size_t operator()(const route_key &key) const noexcept;
   };
 
+  asio::io_context &m_ctx;                                                 ///< Reference to the owning io_context.
   tcp::acceptor m_acceptor;                                                ///< Listening socket (0.0.0.0).
   std::unordered_map<route_key, request_handler, route_key_hash> m_routes; ///< Routes by (method, path).
   request_handler m_default_handler;                                       ///< Fallback if no route matches.
   http_configuration m_cfg;                                                ///< HTTP configuration for server sessions.
-  //
-  std::shared_ptr<details::exponential_backoff_waiter<asio::chrono::microseconds>> m_waiter;
+  mutable std::mutex m_sessions_mutex;                                     ///< Guards m_active_sessions and m_stopped.
+  std::unordered_set<session_ptr> m_active_sessions;                       ///< Live sessions.
+  bool m_stopped;                                                          ///< True after stop().
+  std::shared_ptr<details::exponential_backoff_waiter<asio::chrono::microseconds>> m_waiter; ///< Backoff async waiter.
 };
 
 } // namespace http
