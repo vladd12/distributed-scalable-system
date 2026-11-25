@@ -243,10 +243,10 @@ public:
   /// @details Idempotent and safe to call when no wait is pending. The user
   ///          handler is never invoked as a result of cancellation.
   /// @return  Number of cancelled timer operations (0 or 1 in practice).
-  [[nodiscard]] inline std::size_t cancel() noexcept
+  [[nodiscard]] inline std::size_t cancel(boost::system::error_code &ec) noexcept
   {
     m_handler = nullptr;
-    return m_timer.cancel();
+    return m_timer.cancel(ec);
   }
 
   /// @brief   Cancels any pending wait and restores the initial backoff state.
@@ -255,11 +255,11 @@ public:
   ///          a waiter constructed with `max_retries == 0` still gives up
   ///          synchronously after reset().
   /// @return  Number of cancelled timer operations (0 or 1 in practice).
-  [[nodiscard]] inline std::size_t reset() noexcept
+  [[nodiscard]] inline std::size_t reset(boost::system::error_code &ec) noexcept
   {
     m_current_retry = 1ull;
     m_strategy.reset(m_initial_wait_time);
-    return cancel();
+    return cancel(ec);
   }
 };
 

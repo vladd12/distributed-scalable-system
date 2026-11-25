@@ -102,7 +102,7 @@ public:
       resp = m_req_handler(req);
     } catch (const std::exception &ex)
     {
-      resp = response::text(status_code::INTERNAL_SERVER_ERROR, ex.what());
+      resp = response::text(status_code::INTERNAL_SERVER_ERROR, std::string(ex.what()));
       m_keep_alive = false;
     }
 
@@ -167,7 +167,11 @@ server::server(asio::io_context &ctx, const std::uint16_t port, http_configurati
 
 server::~server() noexcept
 {
-  (void)m_waiter->cancel(); // TODO: logging number of canceled operations
+  // Prevent any pending handler from touching `this`.
+  boost::system::error_code ignored;
+  m_acceptor.cancel(ignored);
+  m_acceptor.close(ignored);
+  (void)m_waiter->cancel(ignored); // TODO: logging number of canceled operations
 }
 
 void server::route(method m, const std::string &path, request_handler handler)
@@ -198,7 +202,7 @@ void server::stop()
 
     // 2) Cancel the backoff waiter if it's mid-retry.
     if (m_waiter)
-      (void)m_waiter->cancel();
+      (void)m_waiter->cancel(ignored);
 
     // 3) Shut down every live session.
     std::unordered_set<session_ptr> to_stop;
@@ -264,6 +268,7 @@ void server::do_accept()
           if (is_last_try)
           {
             // TODO: log exhausted retries.
+            stop(); // exit accept loop cleanly; is_stopped() -> true
             return;
           }
           do_accept();
@@ -274,14 +279,18 @@ void server::do_accept()
     }
     else
     {
-      (void)m_waiter->reset(); // TODO: logging number of canceled operations
+      // TODO: logging number of canceled operations
+      (void)m_waiter->reset(ec);
+      if (ec)
+        return;
+
       auto req_handler = [this](const request &req) { return dispatch(req); };
       auto shutdown_handler = [this](const session_ptr &s) { untrack_session(s); };
       auto session = server_session::create(std::move(socket), req_handler, shutdown_handler, m_cfg);
 
       if (!track_session(session))
       {
-        // stop() raced with accept — discard the session.
+        // stop() raced with accept - discard the session.
         return;
       }
 

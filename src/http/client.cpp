@@ -129,7 +129,8 @@ public:
   ///          may be started from within it (chained requests).
   void on_message_parsed(read_t resp)
   {
-    m_keep_alive = false;
+    // RFC 7230 §6.3 for HTTP/1.1 'Connection' header's default value is 'keep-alive'
+    m_keep_alive = true;
     auto it = resp.headers.find("Connection");
     if (it != resp.headers.end())
       m_keep_alive = utils::to_lower(it->second) != "close";
