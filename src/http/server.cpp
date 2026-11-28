@@ -91,7 +91,7 @@ public:
   ///          decision in the response.
   void on_message_parsed(read_t req)
   {
-    m_keep_alive = false;
+    m_keep_alive = (req.line.version == http_version);
     auto it = req.headers.find("Connection");
     if (it != req.headers.end())
       m_keep_alive = utils::to_lower(it->second) != "close";
