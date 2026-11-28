@@ -19,6 +19,10 @@
 - ~~request::serialize - does not validate the absence of a Host:~~ DONE
   - ~~In HTTP/1.1 Host is required for all requests. If the user forgot, serialize will send it silently without a Host. http::client::async_request adds it, but request::serialize is a public API that can be bypassed.~~
   - ~~Fixed: throw error if there is no Host.~~
+- Stop pending connect work when close() runs.
+  - `close()` clears only the request callback and calls `shutdown()`. It leaves the resolve started in `async_connect()` (lines 80–97) running, and it leaves `m_on_conn_callback` set. If the resolve completes after `close()`, its handler calls `asio::async_connec`t on `m_socket`. That call closes an open socket and connects it again, so the client can open a connection after it was closed. The success callback then runs as though the client were open.
+  - After this happens, later `close()` calls cannot close the reopened socket because `shutdown()` returns at its guard. `is_closed()` reports false, and `async_request()` accepts requests because it checks only `is_open()`.
+  - A closed client must not open its socket or report a connection after `close()` returns. Choose the mechanism that enforces this. For example, cancel the pending resolve in `close()`, clear `m_on_conn_callback`, and stop the resolve handler before it calls `asio::async_connect` when the session is closed.
 
 ## P2 minor priority
 - ~~response::text / response::json - take std::string_view, but copy it to std::string:~~ DONE
@@ -30,3 +34,8 @@
 - ~~response::serialize — 200 with empty body does not setup Content-Length: 0~~ DONE
   - ~~If body.empty() and there is no Content-Length, nothing is written. For 204 No Content is correct (no body, no Content-Length). But for 200 OK with an empty body, it's wrong: the client must know that there is no body.~~
   - ~~According to RFC 7230 §3.3.2 in the absence of Content-Length and Transfer-Encoding, the client reads the body before EOF. This means that the client will wait for close, but the server will not close in keep—alive.~~
+- RFC 9110 §8.6 permits a Content-Length on a HEAD response only when it equals the length the GET response would have had.
+  - When GET returns a body, the generated 0 misstates the representation length.
+- Preserve `close` in repeated `Connection` fields.
+  - For `Connection: keep-alive` followed by `Connection: close`, insertion now discards `close`. The server then keeps the connection open instead of closing it after the response. The previous parser retained `close`.
+  - Combine `Connection` options and make its consumers detect the `close` token. Joining values alone is insufficient because the current consumer compares the whole value with `"close"`. Preserve closure whenever any option requests it.
