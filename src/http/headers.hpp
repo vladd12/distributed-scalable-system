@@ -23,12 +23,15 @@ public:
 
   inline headers_t() = default;
 
-  /// @brief  Constructs headers from an initializer list.
-  /// @param  init_list Pairs of (key, value); keys are normalized and values trimmed.
-  /// @throws core::http_error if a security-sensitive header
-  ///         (`Content-Length`, `Host`) appears more than once (after normalization).
-  /// @note   For non-sensitive keys, the first occurrence wins (same as
-  ///         `std::unordered_map::insert`).
+  /// @brief   Constructs headers from an initializer list.
+  /// @param   init_list Pairs of (key, value); keys are normalized and values trimmed.
+  /// @throws  `core::http_error` if a security-sensitive header
+  ///          (`Content-Length`, `Host`) appears more than once (after normalization).
+  /// @note    For non-sensitive keys, the first occurrence wins (same as
+  ///          `std::unordered_map::insert`).
+  /// @warning First-wins is wrong for `Connection`: `Connection: keep-alive`
+  ///          followed by `Connection: close` keeps the connection open
+  ///          instead of closing it. Combine tokens and honor any `close`.
   headers_t(std::initializer_list<value_type> init_list);
 
   // clang-format off
@@ -86,6 +89,9 @@ public:
   /// @throws  core::http_error on invalid header line, or if a security-sensitive
   ///          header (`Content-Length`, `Host`) appears more than once.
   /// @note    For non-sensitive keys, the first occurrence wins.
+  /// @warning First-wins is wrong for `Connection`: `Connection: keep-alive`
+  ///          followed by `Connection: close` keeps the connection open
+  ///          instead of closing it. Combine tokens and honor any `close`.
   [[nodiscard]] static headers_t parse(std::istream &stream);
 
   /// @brief  Parses the "Content-Length" header.

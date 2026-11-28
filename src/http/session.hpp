@@ -29,9 +29,10 @@ using tcp = asio::ip::tcp;
 ///   - void on_write_complete();                     // called after successful write
 ///   - void on_error(boost::system::error_code ec);  // called on any failure
 ///   - void on_protocol_error(status_code code, std::string_view what);
-///       // called on protocol violation (oversized headers/body). Server
-///       // should send the corresponding HTTP error response and close;
-///       // client should just report the error to the caller.
+///       // called on protocol violation: malformed message, oversized
+///       // headers/body, or invalid framing. Server should send the
+///       // corresponding HTTP error response and close; client should
+///       // report the error to the caller.
 ///   - void on_shutdown(); // called exactly once when the socket closes
 template <typename Derived, typename R, typename W> //
 class session : public std::enable_shared_from_this<Derived>
@@ -251,7 +252,9 @@ private:
   }
 
   /// @brief   Arms the per-operation timeout for the currently pending async op.
-  /// @details If it fires, the session is shut down and on_error(timed_out) is invoked.
+  /// @details On expiry: shutdown + on_error(timed_out). On real error:
+  ///          shutdown + on_error(ec). Normal cancellation
+  ///          (operation_aborted after a successful async op) is ignored.
   void start_timer()
   {
     m_timer.expires_after(m_cfg.io_timeout);

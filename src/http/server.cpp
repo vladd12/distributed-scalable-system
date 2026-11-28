@@ -85,10 +85,11 @@ public:
   // --- hooks from http::session ---
 
   /// @brief   Hook: a full request has been parsed. Dispatches it and writes the response.
-  /// @details Sets keep-alive based on the incoming Connection header, catches
-  ///          exceptions from the handler and turns them into 500 responses
-  ///          (which force close), and echoes the effective Connection
-  ///          decision in the response.
+  /// @details Keep-alive defaults to the protocol version (true for HTTP/1.1,
+  ///          false otherwise) and is overridden by the incoming Connection
+  ///          header if present. Catches handler exceptions into 500 responses
+  ///          (which force close) and echoes the effective Connection decision
+  ///          in the response.
   void on_message_parsed(read_t req)
   {
     m_keep_alive = (req.line.version == http_version);

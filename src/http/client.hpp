@@ -69,6 +69,9 @@ public:
   /// @details Idempotent. A pending request (if any) is cancelled and its
   ///          callback is invoked with `asio::error::operation_aborted`.
   ///          After close(), the client cannot be reused.
+  /// @warning Does not cancel a pending async resolve started by
+  ///          `on_connected()`. If that resolve completes after `close()`,
+  ///          it may attempt to connect and reopen the socket.
   void close();
 
   /// @brief Returns true if the underlying socket is closed.

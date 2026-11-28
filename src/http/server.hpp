@@ -66,7 +66,8 @@ public:
   /// @brief Returns the number of currently active sessions.
   [[nodiscard]] std::size_t active_sessions() const;
 
-  /// @brief Returns true if stop() has been called.
+  /// @brief Returns true if stop() has been called, either explicitly by the
+  ///        user or internally (fatal accept error / exhausted accept retries).
   [[nodiscard]] bool is_stopped() const;
 
 private:

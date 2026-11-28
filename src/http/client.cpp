@@ -169,10 +169,10 @@ public:
   }
 
   /// @brief   Cancels a pending request (if any) and closes the underlying socket.
-  /// @details Any registered response callback is invoked exactly once with
-  ///          `asio::error::operation_aborted` before the socket is closed, so
-  ///          the caller is not left waiting for a response that will never arrive.
-  ///          Idempotent - safe to call multiple times.
+  /// @details A pending response callback (if any) is invoked exactly once with
+  ///          `asio::error::operation_aborted` **after** the socket is closed,
+  ///          so the caller is not left waiting and observes `is_closed() == true`
+  ///          inside the callback. Idempotent.
   void close()
   {
     auto cb = std::move(m_callback);
