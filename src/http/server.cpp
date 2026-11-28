@@ -168,7 +168,9 @@ server::server(asio::io_context &ctx, const std::uint16_t port, http_configurati
 
 server::~server() noexcept
 {
-  // Prevent any pending handler from touching `this`.
+  // Best-effort: cancel pending async ops. Their handlers run later with
+  // `operation_aborted` and return early, but `this` may already be gone —
+  // full safety requires the state-pattern refactor (see README).
   boost::system::error_code ignored;
   m_acceptor.cancel(ignored);
   m_acceptor.close(ignored);
@@ -284,7 +286,9 @@ void server::do_accept()
       // TODO: logging number of canceled operations
       (void)m_waiter->reset(ec);
       if (ec)
-        return;
+      {
+        // TODO: log error code from waiter, socket is valid
+      }
 
       auto req_handler = [this](const request &req) { return dispatch(req); };
       auto shutdown_handler = [this](const session_ptr &s) { untrack_session(s); };

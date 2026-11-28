@@ -163,9 +163,9 @@ TEST(http_headers_test, erase_iterators)
   ASSERT_EQ(h.size(), 3ull);
   iter = h.erase(h.end());
   ASSERT_EQ(iter, h.end());
-  iter = h.end();
-  --iter;
-  ASSERT_EQ(h.erase(iter), h.end());
+  ASSERT_EQ(h.size(), 3ull);
+  auto last = ++(++h.begin());
+  ASSERT_EQ(h.erase(last), h.end());
   ASSERT_EQ(h.size(), 2ull);
 }
 
