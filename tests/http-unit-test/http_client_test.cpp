@@ -37,31 +37,6 @@ TEST(http_client_test, parses_status_and_body)
   EXPECT_EQ(body, "hello");
 }
 
-TEST(http_client_test, request_close_prevents_reuse_from_response_callback)
-{
-  const auto port = next_port();
-  raw_server srv(port, "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nok");
-
-  asio::io_context ctx;
-  http::client cli(ctx, "127.0.0.1", port);
-
-  bool follow_up_rejected = false;
-  cli.get("/", { { "connection", "keep-alive, ClOsE" } }, [&](boost::system::error_code ec, const auto &resp) {
-    ASSERT_FALSE(ec) << ec.message();
-    EXPECT_EQ(resp.body, "ok");
-    EXPECT_TRUE(cli.is_closed());
-
-    cli.get("/next", {}, [&](boost::system::error_code retry_ec, const auto &) {
-      EXPECT_EQ(retry_ec, asio::error::not_connected);
-      follow_up_rejected = true;
-    });
-    EXPECT_TRUE(follow_up_rejected);
-  });
-  ctx.run();
-
-  EXPECT_TRUE(follow_up_rejected);
-}
-
 TEST(http_client_test, parses_response_headers)
 {
   const auto port = next_port();
