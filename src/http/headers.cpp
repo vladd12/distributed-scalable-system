@@ -67,6 +67,11 @@ headers_t::const_iterator headers_t::find(const std::string &key) const
   return storage.find(utils::normalize(key));
 }
 
+bool headers_t::erase(const std::string &key)
+{
+  return (storage.erase(utils::normalize(key)) > 0ull);
+}
+
 headers_t headers_t::parse(std::istream &stream)
 {
   headers_t headers;
