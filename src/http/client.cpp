@@ -129,7 +129,7 @@ public:
   ///          may be started from within it (chained requests).
   void on_message_parsed(read_t resp)
   {
-    m_keep_alive = false;
+    m_keep_alive = (resp.line.version == http_version);
     auto it = resp.headers.find("Connection");
     if (it != resp.headers.end())
       m_keep_alive = utils::to_lower(it->second) != "close";
@@ -158,6 +158,34 @@ public:
     if (cb)
       cb(ec, {});
   }
+
+  /// @brief Hook: a protocol-level violation was detected by the base state machine
+  ///        (oversized response headers or body). Client cannot send an HTTP error
+  ///        response back; surface the failure to the caller and close.
+  void on_protocol_error(status_code /*code*/, std::string_view /*what*/)
+  {
+    on_error(asio::error::invalid_argument);
+  }
+
+  /// @brief   Cancels a pending request (if any) and closes the underlying socket.
+  /// @details A pending response callback (if any) is invoked exactly once with
+  ///          `asio::error::operation_aborted` **after** the socket is closed,
+  ///          so the caller is not left waiting and observes `is_closed() == true`
+  ///          inside the callback. Idempotent.
+  void close()
+  {
+    auto cb = std::move(m_callback);
+    m_callback = nullptr;
+    shutdown();
+    if (cb)
+      cb(asio::error::operation_aborted, {});
+  }
+
+  /// @brief Called exactly once by base shutdown().
+  void on_shutdown()
+  {
+    // No lifecycle tracking on the client side; nothing to do.
+  }
 };
 
 // ---------------------------------------------------------------------------
@@ -176,6 +204,16 @@ void client::on_connected(on_connect_callback handler)
 {
   if (m_session->get_connect_type() == connect_type::async)
     m_session->async_connect(std::move(handler));
+}
+
+void client::close()
+{
+  m_session->close();
+}
+
+bool client::is_closed() const
+{
+  return !m_session->is_open();
 }
 
 void client::get(const std::string &path, const headers_t &headers, response_callback handler)

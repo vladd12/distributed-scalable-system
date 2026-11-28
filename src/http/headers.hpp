@@ -22,6 +22,16 @@ public:
   using value_type = storage_t::value_type;
 
   inline headers_t() = default;
+
+  /// @brief   Constructs headers from an initializer list.
+  /// @param   init_list Pairs of (key, value); keys are normalized and values trimmed.
+  /// @throws  `core::http_error` if a security-sensitive header
+  ///          (`Content-Length`, `Host`) appears more than once (after normalization).
+  /// @note    For non-sensitive keys, the first occurrence wins (same as
+  ///          `std::unordered_map::insert`).
+  /// @warning First-wins is wrong for `Connection`: `Connection: keep-alive`
+  ///          followed by `Connection: close` keeps the connection open
+  ///          instead of closing it. Combine tokens and honor any `close`.
   headers_t(std::initializer_list<value_type> init_list);
 
   // clang-format off
@@ -44,6 +54,15 @@ public:
   [[nodiscard]] inline std::size_t size() const noexcept { return storage.size(); }
   /// @brief True if a header with normalized `key` exists.
   [[nodiscard]] inline bool contains(const std::string &key) const { return find(key) != end(); }
+
+  /// @brief   Removes the element at `pos` iterator.
+  /// @details Pass the `end()` iterator is ok.
+  /// @returns Iterator following the last removed element.
+  inline iterator erase(iterator pos) noexcept { return (pos == end()) ? end() : storage.erase(pos); }
+  /// @brief   Removes the element at `pos` const iterator.
+  /// @details Pass the `cend()` iterator is ok.
+  /// @returns Iterator following the last removed element.
+  inline iterator erase(const_iterator pos) noexcept { return (pos == cend()) ? end() : storage.erase(pos); }
   // clang-format on
 
   /// @brief   Returns reference to the value for `key` (inserting empty string if absent).
@@ -58,11 +77,21 @@ public:
   /// @copydoc find(const std::string &)
   [[nodiscard]] const_iterator find(const std::string &key) const;
 
+  /// @brief  Removes the element (if one exists) with the key equivalent to `key`.
+  /// @return True if the element with passed `key` was removed.
+  bool erase(const std::string &key);
+
   /// @brief   Parses headers from an input stream up to the first empty line.
   /// @details Stops at CRLF CRLF boundary or EOF. Keys are normalized via
   ///          `utils::normalize`; values are trimmed. Used by both request
   ///          and response parsing.
   /// @return  Parsed headers (empty if the first line is already empty).
+  /// @throws  core::http_error on invalid header line, or if a security-sensitive
+  ///          header (`Content-Length`, `Host`) appears more than once.
+  /// @note    For non-sensitive keys, the first occurrence wins.
+  /// @warning First-wins is wrong for `Connection`: `Connection: keep-alive`
+  ///          followed by `Connection: close` keeps the connection open
+  ///          instead of closing it. Combine tokens and honor any `close`.
   [[nodiscard]] static headers_t parse(std::istream &stream);
 
   /// @brief  Parses the "Content-Length" header.

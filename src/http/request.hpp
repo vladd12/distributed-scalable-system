@@ -35,8 +35,10 @@ struct request
   std::string body;  ///< Message body (may be empty).
 
   /// @brief   Serializes the request into HTTP/1.1 wire format.
-  /// @details Adds `Connection: close` if no Connection header is present.
-  ///          Adds `Content-Length` if the body is non-empty and no such header exists.
+  /// @details Adds `Connection: close` if absent.
+  ///          Adds `Content-Length` if absent AND either the body is non-empty
+  ///          or the method anticipates a payload body (POST/PUT/PATCH).
+  /// @throws  core::http_error if 'Host' header is absent (RFC 7230 §5.4).
   /// @return  Full request bytes (headers + CRLF + body).
   [[nodiscard]] std::string serialize() const;
 

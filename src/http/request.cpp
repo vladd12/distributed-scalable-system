@@ -1,6 +1,5 @@
 #include "http/request.hpp"
 
-#include <algorithm>
 #include <core/errors.hpp>
 #include <sstream>
 
@@ -30,6 +29,10 @@ request_line request_line::parse(std::istream &stream)
 
 std::string request::serialize() const
 {
+  // RFC 7230 §5.4: Host is mandatory in HTTP/1.1 requests.
+  if (!headers.contains("Host"))
+    throw core::http_error("request::serialize: 'Host' header is required in HTTP/1.1");
+
   std::ostringstream req;
   req << method_to_string(line.method_type) << ' ' << line.path << ' ' << line.version << "\r\n";
 
@@ -37,10 +40,17 @@ std::string request::serialize() const
     req << key << ": " << value << "\r\n";
 
   if (!headers.contains("Connection"))
-    req << "Connection: close\r\n"; // Simple: close after each request
+    req << "connection: close\r\n";
 
-  if (!headers.contains("Content-Length") && !body.empty())
-    req << "Content-Length: " << body.size() << "\r\n";
+  if (!headers.contains("Content-Length"))
+  {
+    // RFC 7230 §3.3.2: methods that anticipate a payload body SHOULD carry an
+    // explicit Content-Length (possibly 0), even for an empty body.
+    const bool is_method_anticipates_body
+        = (line.method_type == method::POST || line.method_type == method::PUT || line.method_type == method::PATCH);
+    if (is_method_anticipates_body || !body.empty())
+      req << "content-length: " << body.size() << "\r\n";
+  }
 
   req << "\r\n";
   if (!body.empty())

@@ -28,6 +28,12 @@ using tcp = asio::ip::tcp;
 ///   - void on_message_parsed(read_t msg);           // called on fully-read message
 ///   - void on_write_complete();                     // called after successful write
 ///   - void on_error(boost::system::error_code ec);  // called on any failure
+///   - void on_protocol_error(status_code code, std::string_view what);
+///       // called on protocol violation: malformed message, oversized
+///       // headers/body, or invalid framing. Server should send the
+///       // corresponding HTTP error response and close; client should
+///       // report the error to the caller.
+///   - void on_shutdown(); // called exactly once when the socket closes
 template <typename Derived, typename R, typename W> //
 class session : public std::enable_shared_from_this<Derived>
 {
@@ -37,11 +43,12 @@ public:
   using pointer = std::shared_ptr<Derived>;
 
 protected:
-  tcp::socket m_socket;       ///< Underlying TCP socket
-  asio::steady_timer m_timer; ///< Per-operation timeout timer
-  asio::streambuf m_buffer;   ///< Read buffer (header + body capacity)
-  http_configuration m_cfg;   ///< Session configuration
-  bool m_keep_alive = false;  ///< Whether peer agreed to keep-alive
+  tcp::socket m_socket;            ///< Underlying TCP socket
+  asio::steady_timer m_timer;      ///< Per-operation timeout timer
+  asio::streambuf m_buffer;        ///< Read buffer (header + body capacity)
+  http_configuration m_cfg;        ///< Session configuration
+  bool m_keep_alive = false;       ///< Whether peer agreed to keep-alive
+  bool m_shutdown_invoked = false; ///< Guards on_shutdown() to fire exactly once.
 
   /// @brief Initializes the session around an already-open (or about-to-open) socket.
   /// @param socket Connected/owned socket (moved in).
@@ -69,15 +76,23 @@ public:
   /// @brief   Cancels pending operations and closes the socket.
   /// @details Idempotent: safe to call multiple times. Clears the timer first
   ///          so a pending timeout cannot fire after the socket is closed.
+  ///          Invokes `derived().on_shutdown()` exactly once, on the first call
+  ///          that actually transitions to closed state.
   void shutdown()
   {
-    cancel_timer();
-    if (!m_socket.is_open())
+    if (m_shutdown_invoked)
       return;
-    boost::system::error_code ignored;
-    m_socket.cancel(ignored);
-    m_socket.shutdown(tcp::socket::shutdown_both, ignored);
-    m_socket.close(ignored);
+    m_shutdown_invoked = true;
+
+    cancel_timer();
+    if (m_socket.is_open())
+    {
+      boost::system::error_code ignored;
+      m_socket.cancel(ignored);
+      m_socket.shutdown(tcp::socket::shutdown_both, ignored);
+      m_socket.close(ignored);
+    }
+    derived().on_shutdown();
   }
 
   /// @brief Returns true if the underlying socket is still open.
@@ -133,13 +148,14 @@ private:
 
     if (ec == asio::error::not_found)
     {
+      // Streambuf filled up before CRLF CRLF: headers exceed configured capacity.
       // TODO: log error
-      // derived().on_error(core::http_error("HTTP headers exceed configured buffer size"));
-      derived().on_error(asio::error::message_size);
+      derived().on_protocol_error(status_code::LARGE_HEADERS, "HTTP headers exceed configured buffer capacity");
       return;
     }
     if (ec)
     {
+      // TODO: log error
       derived().on_error(ec);
       return;
     }
@@ -153,8 +169,7 @@ private:
     // Sanity check; async_read_until should have guaranteed the delimiter.
     if (delim == end)
     {
-      // TODO: log error
-      // derived().on_error(core::http_error("HTTP message has no CRLF CRLF delimiter"));
+      // TODO: log error "HTTP message has no CRLF CRLF delimiter"
       derived().on_error(asio::error::invalid_argument);
       return;
     }
@@ -162,46 +177,50 @@ private:
     if (header_size > m_cfg.max_header_size)
     {
       // TODO: log error
-      // derived().on_error(core::http_error("HTTP headers exceed max_header_size"));
-      derived().on_error(asio::error::message_size);
+      derived().on_protocol_error(status_code::LARGE_HEADERS, "HTTP headers exceed max_header_size");
       return;
     }
 
+    // Narrow try: parse errors -> BAD_REQUEST. Internal defensiveness (delim not
+    // found) -> on_error; user handler exceptions propagate to io_context::run().
+    read_t msg;
+    std::size_t expected = 0;
     try
     {
       std::istream stream(&m_buffer);
-      read_t msg = read_t::parse(stream);
-      m_buffer.consume(m_buffer.size()); // no-op after parse; kept for symmetry with the read path
-
-      const std::size_t expected = msg.headers.content_length();
-      if (expected > m_cfg.max_body_size)
-      {
-        // TODO: log error
-        // derived().on_error(core::http_error("HTTP body exceeds max_body_size"));
-        derived().on_error(asio::error::message_size);
-        return;
-      }
-      // Body already longer than declared Content-Length (pipelining or a malicious peer) - refuse the message.
-      if (msg.body.size() > expected)
-      {
-        // TODO: log error
-        // derived().on_error(core::http_error("HTTP body exceeds Content-Length (pipelining?)"));
-        derived().on_error(asio::error::invalid_argument);
-        return;
-      }
-
-      const std::size_t remaining = expected - msg.body.size();
-      if (remaining > 0)
-        do_remaining_read(remaining, std::move(msg));
-      else
-        derived().on_message_parsed(std::move(msg));
+      msg = read_t::parse(stream);
+      m_buffer.consume(m_buffer.size());
+      expected = msg.headers.content_length();
     } catch (const std::exception &ex)
     {
-      // Malformed HTTP (bad status line, bad request line, etc.).
-      // TODO: log error
-      // derived().on_error(core::http_error(ex.what()));
-      derived().on_error(asio::error::invalid_argument);
+      // Malformed HTTP: bad request line, invalid header, duplicate Content-Length,
+      // invalid Content-Length. `ex.what()` is diagnostic only - never sent to the
+      // peer (info leak).
+      // TODO: log ex.what().
+      derived().on_protocol_error(status_code::BAD_REQUEST, ex.what());
+      return;
     }
+
+    if (expected > m_cfg.max_body_size)
+    {
+      // TODO: log error
+      derived().on_protocol_error(status_code::LARGE_PAYLOAD, "HTTP body exceed max_body_size");
+      return;
+    }
+
+    if (msg.body.size() > expected)
+    {
+      // Pipelining or a malicious peer: body already exceeds declared length.
+      // TODO: log error
+      derived().on_protocol_error(status_code::BAD_REQUEST, "invalid message framing");
+      return;
+    }
+
+    const std::size_t remaining = expected - msg.body.size();
+    if (remaining > 0)
+      do_remaining_read(remaining, std::move(msg));
+    else
+      derived().on_message_parsed(std::move(msg)); // <-- outside try
   }
 
   /// @brief Reads exactly `remaining` more body bytes into the buffer.
@@ -233,13 +252,15 @@ private:
   }
 
   /// @brief   Arms the per-operation timeout for the currently pending async op.
-  /// @details If it fires, the session is shut down and on_error(timed_out) is invoked.
+  /// @details On expiry: shutdown + on_error(timed_out). On real error:
+  ///          shutdown + on_error(ec). Normal cancellation
+  ///          (operation_aborted after a successful async op) is ignored.
   void start_timer()
   {
     m_timer.expires_after(m_cfg.io_timeout);
     auto self = derived().shared_from_this();
     m_timer.async_wait([this, self](boost::system::error_code ec) {
-      // normal cancellation — the async op completed successfully
+      // normal cancellation - the async op completed successfully
       if (ec == asio::error::operation_aborted)
         return;
       shutdown();

@@ -157,23 +157,28 @@ TEST(backoff_waiter_test, double_wait_throws)
 {
   asio::io_context ctx;
   auto waiter = details::create_default_const_backoff_waiter(ctx);
+  boost::system::error_code ec;
 
   waiter->wait([](auto, auto) {});
   EXPECT_THROW(waiter->wait([](auto, auto) {}), core::http_error);
 
   // Clean up the pending async_wait to keep sanitizers / leak checkers happy.
-  (void)waiter->cancel();
+  EXPECT_NO_THROW((void)waiter->cancel(ec));
+  EXPECT_FALSE(ec);
 }
 
 TEST(backoff_waiter_test, cancel_stops_pending_wait)
 {
   asio::io_context ctx;
   auto waiter = details::create_default_const_backoff_waiter(ctx);
+  boost::system::error_code ec;
 
   bool fired = false;
   waiter->wait([&](auto, auto) { fired = true; });
 
-  const std::size_t cancelled = waiter->cancel();
+  std::size_t cancelled = 0u;
+  EXPECT_NO_THROW(cancelled = waiter->cancel(ec));
+  EXPECT_FALSE(ec);
   EXPECT_EQ(cancelled, 1u); // one pending async_wait
 
   ctx.run();
@@ -184,8 +189,12 @@ TEST(backoff_waiter_test, cancel_without_pending_returns_zero)
 {
   asio::io_context ctx;
   auto waiter = details::create_default_const_backoff_waiter(ctx);
+  boost::system::error_code ec;
 
-  EXPECT_EQ(waiter->cancel(), 0u); // nothing pending yet
+  std::size_t cancelled = 0u;
+  EXPECT_NO_THROW(cancelled = waiter->cancel(ec));
+  EXPECT_FALSE(ec);
+  EXPECT_EQ(cancelled, 0u); // nothing pending yet
 }
 
 TEST(backoff_waiter_test, reset_after_give_up_restores_state)
@@ -193,6 +202,7 @@ TEST(backoff_waiter_test, reset_after_give_up_restores_state)
   asio::io_context ctx;
   constexpr std::size_t max_retries = 2;
   auto waiter = std::make_shared<details::const_backoff_waiter<std::chrono::microseconds>>(ctx, 10us, max_retries);
+  boost::system::error_code ec;
 
   auto run_cycle = [&]() -> std::pair<int, bool> {
     int retries = 0;
@@ -217,7 +227,8 @@ TEST(backoff_waiter_test, reset_after_give_up_restores_state)
   EXPECT_EQ(r1, max_retries);
   EXPECT_TRUE(g1);
 
-  (void)waiter->reset();
+  EXPECT_NO_THROW((void)waiter->reset(ec));
+  EXPECT_FALSE(ec);
 
   auto [r2, g2] = run_cycle();
   EXPECT_EQ(r2, max_retries);
@@ -228,11 +239,14 @@ TEST(backoff_waiter_test, reset_during_pending_wait_cancels)
 {
   asio::io_context ctx;
   auto waiter = details::create_default_const_backoff_waiter(ctx);
+  boost::system::error_code ec;
 
   bool fired = false;
   waiter->wait([&](auto, auto) { fired = true; });
 
-  const std::size_t cancelled = waiter->reset();
+  std::size_t cancelled = 0u;
+  EXPECT_NO_THROW(cancelled = waiter->reset(ec));
+  EXPECT_FALSE(ec);
   EXPECT_EQ(cancelled, 1u);
 
   ctx.run();
@@ -243,9 +257,11 @@ TEST(backoff_waiter_test, cancel_then_wait_works_again)
 {
   asio::io_context ctx;
   auto waiter = details::create_default_const_backoff_waiter(ctx);
+  boost::system::error_code ec;
 
   waiter->wait([](auto, auto) {});
-  (void)waiter->cancel();
+  EXPECT_NO_THROW((void)waiter->cancel(ec));
+  EXPECT_FALSE(ec);
   ctx.run();
   ctx.restart();
 
@@ -291,21 +307,31 @@ TEST(backoff_waiter_test, cancel_after_handler_fired_returns_zero)
 {
   asio::io_context ctx;
   auto waiter = details::create_default_const_backoff_waiter(ctx);
+  boost::system::error_code ec;
 
   waiter->wait([](auto, auto) {});
   ctx.run(); // handler already done
 
-  EXPECT_EQ(waiter->cancel(), 0u); // nothing to cancel
+  std::size_t cancelled = 0u;
+  EXPECT_NO_THROW(cancelled = waiter->cancel(ec));
+  EXPECT_FALSE(ec);
+  EXPECT_EQ(cancelled, 0u); // nothing pending yet
 }
 
 TEST(backoff_waiter_test, double_cancel_is_idempotent)
 {
   asio::io_context ctx;
   auto waiter = details::create_default_const_backoff_waiter(ctx);
+  boost::system::error_code ec;
 
   waiter->wait([](auto, auto) {});
-  EXPECT_EQ(waiter->cancel(), 1u); // first time cancels pending
-  EXPECT_EQ(waiter->cancel(), 0u); // second time - nothing
+  std::size_t cancelled = 0u;
+  EXPECT_NO_THROW(cancelled = waiter->cancel(ec));
+  EXPECT_FALSE(ec);
+  EXPECT_EQ(cancelled, 1u); // first time cancels pending
+  EXPECT_NO_THROW(cancelled = waiter->cancel(ec));
+  EXPECT_FALSE(ec);
+  EXPECT_EQ(cancelled, 0u); // second time - nothing
   ctx.run();
 }
 
@@ -375,6 +401,7 @@ TEST(backoff_waiter_test, reset_after_zero_max_still_gives_up)
 {
   asio::io_context ctx;
   auto waiter = std::make_shared<details::const_backoff_waiter<std::chrono::microseconds>>(ctx, 10us, 0);
+  boost::system::error_code ec;
 
   int fires = 0;
   for (int i = 0; i < 3; ++i)
@@ -385,7 +412,8 @@ TEST(backoff_waiter_test, reset_after_zero_max_still_gives_up)
       is_last = last;
     });
     EXPECT_TRUE(is_last); // every time give-up, because max_retries = 0
-    (void)waiter->reset();
+    EXPECT_NO_THROW((void)waiter->reset(ec));
+    EXPECT_FALSE(ec);
   }
   EXPECT_EQ(fires, 3);
 }

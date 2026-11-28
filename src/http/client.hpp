@@ -50,7 +50,7 @@ public:
   /// @param  ctx       io_context that drives async operations.
   /// @param  host      Remote host (kept for Host header; used for connect).
   /// @param  port      Remote port.
-  /// @param  conn_type sync or async connect strategy.
+  /// @param  conn_type Sync or async connect strategy.
   /// @throws core::http_error if conn_type == sync and connect fails.
   /// @throws std::bad_alloc / boost errors possibly propagated from asio on async.
   explicit client(asio::io_context &ctx, const std::string &host, const std::uint16_t port,
@@ -64,6 +64,18 @@ public:
   /// @details No-op for sync mode (already connected). Must be called before
   ///          running the io_context; the handler is invoked once.
   void on_connected(on_connect_callback handler);
+
+  /// @brief   Closes the underlying connection.
+  /// @details Idempotent. A pending request (if any) is cancelled and its
+  ///          callback is invoked with `asio::error::operation_aborted`.
+  ///          After close(), the client cannot be reused.
+  /// @warning Does not cancel a pending async resolve started by
+  ///          `on_connected()`. If that resolve completes after `close()`,
+  ///          it may attempt to connect and reopen the socket.
+  void close();
+
+  /// @brief Returns true if the underlying socket is closed.
+  [[nodiscard]] bool is_closed() const;
 
   /// @brief Performs an asynchronous HTTP GET request.
   /// @param path    Request target (path + optional query).

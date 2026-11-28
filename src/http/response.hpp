@@ -35,8 +35,9 @@ struct response
   std::string body;  ///< Message body (may be empty).
 
   /// @brief   Serializes the response into HTTP/1.1 wire format.
-  /// @details Adds `Content-Length` if absent (based on `body.size()`).
-  ///          Adds `Connection: close` if absent.
+  /// @details Adds `Connection: close` if absent.
+  ///          Adds `Content-Length` if absent, except for 204 No Content and
+  ///          304 Not Modified (RFC 7230 §3.3.2 forbids it for 204).
   /// @return  Full response bytes (headers + CRLF + body).
   [[nodiscard]] std::string serialize() const;
 
@@ -51,12 +52,12 @@ struct response
 
   /// @brief Creates a plain-text response (`Content-Type: text/plain`).
   /// @param code Status code to use.
-  /// @param text Body content (copied).
+  /// @param text Body content (moved into the response body).
   [[nodiscard]] static response text(const status_code code, std::string text);
 
   /// @brief Creates a JSON response (`Content-Type: application/json`).
   /// @param code      Status code to use.
-  /// @param json_body Serialized JSON (copied into `body`).
+  /// @param json_body Serialized JSON (moved into the response body).
   [[nodiscard]] static response json(const status_code code, std::string json_body);
 
   /// @brief  Parses a raw HTTP response from an input stream.
