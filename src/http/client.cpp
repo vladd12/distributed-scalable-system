@@ -3,6 +3,8 @@
 #include <http/session.hpp>
 #include <utils/strings.hpp>
 
+#include <ranges>
+
 namespace http
 {
 
@@ -19,6 +21,7 @@ class client::client_session final : public session<client_session, response, re
 {
 private:
   tcp::resolver m_resolver;               ///< DNS resolver used for sync/async connect
+  bool m_request_close = false;          ///< Whether the current request asks to close
   response_callback m_callback;           ///< Callback of the in-flight request (one at a time)
   on_connect_callback m_on_conn_callback; ///< Callback awaited by on_connected()
   std::string m_host;                     ///< Remote host (kept for Host header and reconnect)
@@ -114,8 +117,21 @@ public:
 
     if (!req.headers.contains("Host"))
       req.headers["Host"] = m_host + ":" + std::to_string(m_port);
-    if (!req.headers.contains("Connection"))
+    auto connection = req.headers.find("Connection");
+    m_request_close = false;
+    if (connection == req.headers.end())
       req.headers["Connection"] = "Keep-Alive";
+    else
+    {
+      for (auto option : connection->second | std::views::split(','))
+      {
+        if (utils::normalize(std::string(option.begin(), option.end())) == "close")
+        {
+          m_request_close = true;
+          break;
+        }
+      }
+    }
 
     m_callback = std::move(cb);
     do_write(req);
@@ -124,23 +140,20 @@ public:
   // --- hooks from http::session ---
 
   /// @brief   Hook: a full response has been parsed. Invokes the pending callback.
-  /// @details Inspects the Connection header to decide keep-alive for the next
-  ///          request. Callback is cleared before invocation, so a new request
-  ///          may be started from within it (chained requests).
+  /// @details Closes the socket before invoking the callback if the request or
+  ///          response requires it. Otherwise the callback may start another request.
   void on_message_parsed(read_t resp)
   {
-    m_keep_alive = (resp.line.version == http_version);
     auto it = resp.headers.find("Connection");
-    if (it != resp.headers.end())
-      m_keep_alive = utils::to_lower(it->second) != "close";
+    m_keep_alive = !m_request_close
+        && (it == resp.headers.end() ? resp.line.version == http_version : utils::to_lower(it->second) != "close");
 
     auto cb = std::move(m_callback);
     m_callback = nullptr;
-    if (cb)
-      cb({}, std::move(resp));
-
     if (!m_keep_alive)
       shutdown();
+    if (cb)
+      cb({}, std::move(resp));
   }
 
   /// @brief Hook: request was fully written. Switch to reading the response.
