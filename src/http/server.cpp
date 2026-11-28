@@ -273,6 +273,7 @@ void server::do_accept()
           }
           do_accept();
         });
+        return;
       }
       // Skip transient errors (connection_aborted, connection_reset, ...) - retry.
       do_accept();
